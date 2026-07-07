@@ -1,0 +1,251 @@
+.agent-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.25rem;
+  background: var(--bg-card);
+  border-left: 1px solid var(--border-glass);
+}
+
+.agent-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.agent-panel__header-top {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.agent-panel__brain {
+  font-size: 1.75rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+.agent-panel__title {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.agent-panel__subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.agent-panel__status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-glass);
+}
+
+.agent-panel__idle-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.agent-panel__status-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.agent-panel__ripple {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 8px;
+  height: 8px;
+}
+
+.agent-panel__ripple span {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--accent-teal);
+  border-radius: 50%;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+.agent-panel__ripple span:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.agent-panel__ripple span:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+.agent-panel__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  margin-bottom: 1.25rem;
+}
+
+.agent-panel__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.agent-panel__stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+}
+
+.agent-panel__stat-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.agent-panel__pipeline {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.agent-panel__connector {
+  position: relative;
+  height: 12px;
+  margin-left: 20px;
+}
+
+.agent-panel__connector-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  border-left: 2px dashed var(--border-glass);
+}
+
+.agent-panel__connector--active .agent-panel__connector-line {
+  border-left-style: solid;
+}
+
+.agent-panel__connector-pulse {
+  position: absolute;
+  left: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: float 1s infinite alternate;
+}
+
+.agent-panel__card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--border-glass);
+  transition: all var(--transition-fast);
+}
+
+.agent-panel__card--active {
+  background: rgba(var(--agent-color), 0.05);
+  border-color: var(--agent-color);
+  box-shadow: 0 0 12px rgba(var(--agent-color), 0.1);
+}
+
+.agent-panel__card--complete {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.agent-panel__card-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.agent-panel__card-icon {
+  font-size: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.agent-panel__card-icon--active {
+  background: var(--agent-color);
+}
+
+.agent-panel__card-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.agent-panel__card-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.agent-panel__card-status {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.agent-panel__spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  animation: spin 1s linear infinite;
+}
+
+.agent-panel__check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-panel__idle {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.agent-panel__footer {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-glass);
+}
+
+.agent-panel__footer-text {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
