@@ -165,7 +165,11 @@ export function AppProvider({ children }) {
   });
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     try {
-      return localStorage.getItem('lifeline_auth') === 'true';
+      const saved = localStorage.getItem('lifeline_auth');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed && parsed.isLoggedIn === true;
+      }
     } catch {}
     return false;
   });
@@ -286,6 +290,13 @@ export function AppProvider({ children }) {
     try { localStorage.removeItem('lifeline_medical_history'); } catch {}
   }, []);
 
+  const login = useCallback((authData) => {
+    try {
+      localStorage.setItem('lifeline_auth', JSON.stringify({ isLoggedIn: true, ...authData }));
+    } catch {}
+    setIsAuthenticated(true);
+  }, []);
+
   const logout = useCallback(() => {
     setIsAuthenticated(false);
     try { localStorage.removeItem('lifeline_auth'); } catch {}
@@ -323,6 +334,7 @@ export function AppProvider({ children }) {
     clearChat,
     resetAgentStatuses,
     clearMedicalHistory,
+    login,
     logout,
   };
 

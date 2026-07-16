@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 import './AuthPage.css';
 
 export default function AuthPage() {
   const navigate = useNavigate();
+  const { login } = useApp();
   const [mode, setMode] = useState('login'); // 'login' | 'signup'
   const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
@@ -65,16 +67,12 @@ export default function AuthPage() {
       localStorage.setItem('lifeline_user', JSON.stringify(users));
 
       // Auto-login after signup
-      localStorage.setItem(
-        'lifeline_auth',
-        JSON.stringify({
-          isLoggedIn: true,
-          fullName: userData.fullName,
-          email: userData.email,
-          phone: userData.phone,
-          createdAt: userData.createdAt,
-        })
-      );
+      login({
+        fullName: userData.fullName,
+        email: userData.email,
+        phone: userData.phone,
+        createdAt: userData.createdAt,
+      });
 
       setSuccess('Account created successfully! Redirecting...');
       setTimeout(() => navigate('/'), 1000);
@@ -96,16 +94,12 @@ export default function AuthPage() {
         return;
       }
 
-      localStorage.setItem(
-        'lifeline_auth',
-        JSON.stringify({
-          isLoggedIn: true,
-          fullName: matchedUser.fullName,
-          email: matchedUser.email,
-          phone: matchedUser.phone,
-          createdAt: matchedUser.createdAt,
-        })
-      );
+      login({
+        fullName: matchedUser.fullName,
+        email: matchedUser.email,
+        phone: matchedUser.phone,
+        createdAt: matchedUser.createdAt,
+      });
 
       setSuccess('Login successful! Redirecting...');
       setTimeout(() => navigate('/'), 1000);
