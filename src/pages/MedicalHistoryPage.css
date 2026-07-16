@@ -1,0 +1,465 @@
+/* ============================================
+   MedicalHistoryPage — Timeline Glassmorphism
+   ============================================ */
+
+.medical-history-page {
+  padding: 2rem 1.5rem 4rem;
+  max-width: 960px;
+  margin: 0 auto;
+  animation: fadeIn 0.4s ease both;
+}
+
+/* ---------- Header ---------- */
+.mh-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  animation: fadeInUp 0.5s ease both;
+}
+
+.mh-header-text h1 {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 0.35rem;
+}
+
+.mh-header-text h1 span {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.mh-header-text p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.mh-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.85rem;
+  border-radius: var(--radius-full);
+  background: var(--accent-teal-dim);
+  color: var(--accent-teal);
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid rgba(0, 212, 170, 0.25);
+  margin-top: 0.5rem;
+}
+
+.mh-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.15rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-red-dim);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--accent-red);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.mh-clear-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  box-shadow: var(--shadow-glow-red);
+}
+
+/* ---------- Timeline ---------- */
+.mh-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  position: relative;
+}
+
+/* Vertical timeline line */
+.mh-timeline::before {
+  content: '';
+  position: absolute;
+  left: 20px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--accent-teal-dim), var(--accent-purple-dim), transparent);
+  border-radius: 2px;
+}
+
+/* ---------- Consultation Card ---------- */
+.mh-card {
+  position: relative;
+  margin-left: 48px;
+  background: var(--gradient-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  transition: all var(--transition-base);
+  animation: fadeInUp 0.5s ease both;
+}
+
+.mh-card:nth-child(1) { animation-delay: 0.05s; }
+.mh-card:nth-child(2) { animation-delay: 0.10s; }
+.mh-card:nth-child(3) { animation-delay: 0.15s; }
+.mh-card:nth-child(4) { animation-delay: 0.20s; }
+.mh-card:nth-child(5) { animation-delay: 0.25s; }
+.mh-card:nth-child(6) { animation-delay: 0.30s; }
+
+.mh-card:hover {
+  border-color: var(--border-glass-hover);
+  box-shadow: var(--shadow-md);
+}
+
+/* Timeline dot */
+.mh-card::before {
+  content: '';
+  position: absolute;
+  left: -36px;
+  top: 1.75rem;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent-teal);
+  border: 2px solid var(--bg-primary);
+  box-shadow: 0 0 8px rgba(0, 212, 170, 0.4);
+}
+
+/* connector line from dot to card */
+.mh-card::after {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: calc(1.75rem + 4px);
+  width: 24px;
+  height: 2px;
+  background: var(--border-glass);
+}
+
+/* ---------- Card Header ---------- */
+.mh-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.mh-card-date {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.mh-urgency-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mh-urgency-badge.low {
+  background: var(--accent-green-dim);
+  color: var(--accent-green);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.mh-urgency-badge.moderate {
+  background: var(--accent-orange-dim);
+  color: var(--accent-orange);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.mh-urgency-badge.high {
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.mh-urgency-badge.emergency {
+  background: var(--accent-red-dim);
+  color: var(--accent-red);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  animation: emergencyPulse 2s ease-in-out infinite;
+}
+
+/* ---------- Card Body ---------- */
+.mh-symptoms {
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-family: var(--font-heading);
+  color: var(--text-primary);
+  margin-bottom: 0.6rem;
+  line-height: 1.4;
+}
+
+.mh-summary {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: 1rem;
+}
+
+/* ---------- Expand Toggle ---------- */
+.mh-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mh-expand-btn:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--border-glass-hover);
+  color: var(--text-primary);
+}
+
+.mh-expand-icon {
+  transition: transform var(--transition-fast);
+  font-size: 0.7rem;
+}
+
+.mh-expand-icon.open {
+  transform: rotate(180deg);
+}
+
+/* ---------- Expanded Details ---------- */
+.mh-details {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-glass);
+  animation: fadeInUp 0.3s ease both;
+}
+
+.mh-detail-section {
+  margin-bottom: 1rem;
+}
+
+.mh-detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.mh-detail-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+}
+
+.mh-detail-content {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ---------- Empty State ---------- */
+.mh-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 5rem 2rem;
+  animation: fadeInUp 0.6s ease both;
+}
+
+.mh-empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1.25rem;
+  opacity: 0.6;
+  animation: float 6s ease-in-out infinite;
+}
+
+.mh-empty h3 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.mh-empty p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  max-width: 400px;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.mh-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.5rem;
+  border-radius: var(--radius-md);
+  background: var(--gradient-primary);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.mh-empty-cta:hover {
+  box-shadow: var(--shadow-md), var(--shadow-glow-teal);
+  transform: translateY(-2px);
+  color: #fff;
+}
+
+/* ---------- Confirm Modal ---------- */
+.mh-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  animation: fadeIn 0.2s ease both;
+}
+
+.mh-confirm-modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  animation: scaleIn 0.3s ease both;
+  box-shadow: var(--shadow-xl);
+}
+
+.mh-confirm-modal h3 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.mh-confirm-modal p {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.mh-confirm-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.mh-confirm-actions button {
+  padding: 0.55rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.mh-confirm-cancel {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  color: var(--text-secondary);
+}
+
+.mh-confirm-cancel:hover {
+  background: var(--bg-glass-hover);
+  color: var(--text-primary);
+}
+
+.mh-confirm-delete {
+  background: var(--accent-red-dim);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--accent-red);
+}
+
+.mh-confirm-delete:hover {
+  background: rgba(239, 68, 68, 0.25);
+  box-shadow: var(--shadow-glow-red);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 768px) {
+  .medical-history-page {
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  .mh-header {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .mh-header-text h1 {
+    font-size: 1.5rem;
+  }
+
+  .mh-timeline::before {
+    left: 14px;
+  }
+
+  .mh-card {
+    margin-left: 36px;
+    padding: 1.15rem;
+  }
+
+  .mh-card::before {
+    left: -30px;
+    width: 10px;
+    height: 10px;
+    top: 1.5rem;
+  }
+
+  .mh-card::after {
+    left: -20px;
+    top: calc(1.5rem + 3px);
+    width: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mh-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+}

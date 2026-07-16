@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 
 const AppContext = createContext(null);
 
@@ -139,16 +139,35 @@ function extractSymptoms(text) {
 export function AppProvider({ children }) {
   const [messages, setMessages] = useState([]);
   const [agentStatuses, setAgentStatuses] = useState(initialAgentStatuses);
-  const [userProfile, setUserProfile] = useState({
-    name: '',
-    age: '',
-    gender: '',
-    location: '',
-    state: 'Telangana',
-    language: 'en',
-    income: '',
-    occupation: '',
-    existingConditions: '',
+  const [userProfile, setUserProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem('lifeline_profile');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      name: '',
+      age: '',
+      gender: '',
+      location: '',
+      state: 'Telangana',
+      language: 'en',
+      income: '',
+      occupation: '',
+      existingConditions: '',
+    };
+  });
+  const [medicalHistory, setMedicalHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('lifeline_medical_history');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      return localStorage.getItem('lifeline_auth') === 'true';
+    } catch {}
+    return false;
   });
   const [currentLanguage, setCurrentLanguage] = useState('en');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -214,6 +233,23 @@ export function AppProvider({ children }) {
       setMessages(prev => [...prev, assistantMsg]);
       setConversationHistory(prev => [...prev, { role: 'assistant', content: assistantMsg.content }]);
 
+      /* Save consultation to medical history */
+      const consultation = {
+        id: assistantMsg.id,
+        timestamp: assistantMsg.timestamp,
+        symptoms: content.trim(),
+        urgency: orchestratorResult.actionPlan?.urgency || 'unknown',
+        summary: orchestratorResult.actionPlan?.summary || '',
+        actionPlan: orchestratorResult.actionPlan,
+        agentResults: orchestratorResult.results,
+        responseTime: elapsed,
+      };
+      setMedicalHistory(prev => {
+        const updated = [...prev, consultation];
+        try { localStorage.setItem('lifeline_medical_history', JSON.stringify(updated)); } catch {}
+        return updated;
+      });
+
       queryCountRef.current += 1;
       setAnalyticsData(prev => ({
         totalQueries: queryCountRef.current,
@@ -238,7 +274,21 @@ export function AppProvider({ children }) {
   }, [isProcessing, userProfile, resetAgentStatuses]);
 
   const updateProfile = useCallback((updates) => {
-    setUserProfile(prev => ({ ...prev, ...updates }));
+    setUserProfile(prev => {
+      const updated = { ...prev, ...updates };
+      try { localStorage.setItem('lifeline_profile', JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+  }, []);
+
+  const clearMedicalHistory = useCallback(() => {
+    setMedicalHistory([]);
+    try { localStorage.removeItem('lifeline_medical_history'); } catch {}
+  }, []);
+
+  const logout = useCallback(() => {
+    setIsAuthenticated(false);
+    try { localStorage.removeItem('lifeline_auth'); } catch {}
   }, []);
 
   const setLanguage = useCallback((lang) => {
@@ -265,11 +315,15 @@ export function AppProvider({ children }) {
     conversationHistory,
     analyticsData,
     agents: AGENTS,
+    medicalHistory,
+    isAuthenticated,
     sendMessage,
     updateProfile,
     setLanguage,
     clearChat,
     resetAgentStatuses,
+    clearMedicalHistory,
+    logout,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

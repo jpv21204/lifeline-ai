@@ -19,7 +19,7 @@ const LANGUAGES = [
 ];
 
 export default function Header() {
-  const { currentLanguage, setLanguage, isProcessing } = useApp();
+  const { currentLanguage, setLanguage, isProcessing, logout } = useApp();
   const [langOpen, setLangOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const langRef = useRef(null);
@@ -63,6 +63,9 @@ export default function Header() {
           <NavLink to="/schemes" className={({ isActive }) => `header__nav-link ${isActive ? 'header__nav-link--active' : ''}`}>
             <span className="header__nav-icon">📋</span> Schemes
           </NavLink>
+          <NavLink to="/history" className={({ isActive }) => `header__nav-link ${isActive ? 'header__nav-link--active' : ''}`}>
+            <span className="header__nav-icon">📋</span> History
+          </NavLink>
         </nav>
 
         {/* Right side */}
@@ -97,6 +100,11 @@ export default function Header() {
             )}
           </div>
 
+          {/* Logout Button */}
+          <button className="btn btn-ghost btn-sm" onClick={logout} title="Logout" style={{ marginLeft: '0.5rem' }}>
+            🚪 <span className="hide-mobile">Logout</span>
+          </button>
+
           {/* Mobile Menu Toggle */}
           <button className="header__hamburger hide-tablet" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             <span className={`header__hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
@@ -113,6 +121,8 @@ export default function Header() {
           <NavLink to="/chat" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>💬 Chat</NavLink>
           <NavLink to="/dashboard" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>📊 Dashboard</NavLink>
           <NavLink to="/schemes" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>📋 Schemes</NavLink>
+          <NavLink to="/history" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>📋 History</NavLink>
+          <button className="header__mobile-link" onClick={() => { logout(); setMobileMenuOpen(false); }} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textAlign: 'left', width: '100%', padding: 'inherit', font: 'inherit' }}>🚪 Logout</button>
         </nav>
       )}
     </header>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from '../components/Layout/Sidebar';
 import ChatWindow from '../components/Chat/ChatWindow';
+import ChatInput from '../components/Chat/ChatInput';
 import AgentActivityPanel from '../components/Chat/AgentActivityPanel';
 import './ChatPage.css';
 
@@ -45,6 +46,7 @@ export default function ChatPage() {
         {/* Center column: Chat Window */}
         <div className="chat-window-col">
           <ChatWindow />
+          <ChatInput />
         </div>
 
         {/* Right column: Agent Activity Visualization */}
