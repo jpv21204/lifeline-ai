@@ -1,8 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import './Dashboard.css';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { messages, analyticsData } = useApp();
 
   // Filter messages with actionPlan
@@ -129,12 +131,12 @@ export default function Dashboard() {
       <div className="quick-actions-section">
         <h4>⚡ Quick Actions</h4>
         <div className="actions-grid">
-          <div className="action-tile glass-card" onClick={() => window.location.href = '/chat'}>
+          <div className="action-tile glass-card" onClick={() => navigate('/chat')}>
             <span className="tile-icon">🩺</span>
             <h5>Start Symptom Check</h5>
             <p>Describe your issue and get guidance.</p>
           </div>
-          <div className="action-tile glass-card" onClick={() => window.location.href = '/schemes'}>
+          <div className="action-tile glass-card" onClick={() => navigate('/schemes')}>
             <span className="tile-icon">📋</span>
             <h5>Browse Govt Schemes</h5>
             <p>Check eligibility for state & national plans.</p>
