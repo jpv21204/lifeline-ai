@@ -21,6 +21,21 @@ function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
+const GREETING_RESPONSES = {
+  en: "Hello! I am LifeLine AI, your community healthcare assistant. How can I help you today? Please describe your symptoms or health concern, and I will analyze them for you.",
+  te: "నమస్కారం! నేను లైఫ్‌లైన్ AI, మీ సామాజిక ఆరోగ్య సహాయకుడిని. ఈరోజు నేను మీకు ఎలా సహాయపడగలను? మీకు ఎలాంటి లక్షణాలు లేదా ఆరోగ్య సమస్యలు ఉన్నాయో దయచేసి వివరించండి.",
+  hi: "नमस्ते! मैं लाइफलाइन AI हूँ, आपका सामुदायिक स्वास्थ्य सहायक। आज मैं आपकी क्या मदद कर सकता हूँ? कृपया अपने लक्षणों या स्वास्थ्य समस्या के बारे में बताएं।",
+  ta: "வணக்கம்! நான் லைஃப்லைன் AI, உங்கள் சமூக சுகாதார உதவியாளர். இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்? உங்கள் அறிகுறிகளை அல்லது உடல்நலப் பிரச்சினைகளை விவரிக்கவும்.",
+  kn: "ನಮಸ್ಕಾರ! ನಾನು ಲೈಫ್‌ಲೈನ್ AI, ನಿಮ್ಮ ಸಮುದಾಯ ಆರೋಗ್ಯ ಸಹಾಯಕ. ಇಂದು ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು? ದಯವಿಟ್ಟು ನಿಮ್ಮ ರೋಗಲಕ್ಷಣಗಳು ಅಥವಾ ಆರೋಗ್ಯ ಸಮಸ್ಯೆಗಳನ್ನು ವಿವರಿಸಿ.",
+  ml: "നമസ്കാരം! ഞാൻ ലൈഫ്‌ലൈൻ AI, നിങ്ങളുടെ കമ്മ്യൂണിറ്റി ആരോഗ്യ സഹായിയാണ്. ഇന്ന് ഞാൻ നിങ്ങളെ എങ്ങനെ സഹായിക്കണം? നിങ്ങളുടെ ലക്ഷണങ്ങളോ ആരോഗ്യ പ്രശ്നങ്ങളോ ദയവായി വിവരിക്കുക.",
+  bn: "হ্যালো! আমি লাইফলাইন AI, আপনার স্বাস্থ্য সহকারী। আজ আমি আপনাকে কীভাবে সাহায্য করতে পারি? অনুগ্রহ করে আপনার উপসর্গ বা স্বাস্থ্য সমস্যাগুলি বলুন।",
+  pa: "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਲਾਈਫਲਾਈਨ AI ਹਾਂ, ਤੁਹਾਡਾ ਸਿਹਤ ਸਹਾਇਕ। ਅੱಜ ਮੈਂ ਤੁਹਾਡੀ ਕੀ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ? ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੇ ਲੱਛਣਾਂ ਬਾਰੇ ਦੱਸੋ।",
+  mr: "नमस्कार! मी खालीलपैकी लाइफलाईन AI आहे, आपला आरोग्य सहाय्यक. आज मी तुम्हाला कशी मदत करू शकतो? कृपया तुमच्या लक्षणांबद्दल सांगा।",
+  gu: "નમસ્તે! હું લાઇફલાઇન AI છું, તમારો આરોગ્ય સહાયક. આજે હું તમને કેવી રીતે મદદ કરી શકું? કૃપા કરીને તમારા લક્ષણો વિશે જણાવો.",
+  or: "ନମସ୍କାର! ମୁଁ ଲାଇଫଲାଇନ AI, ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟ ସହାୟକ | ଆଜି ମୁଁ ଆପଣଙ୍କୁ କିପରି ସାହାଯ୍ୟ କରିପାରିବି? ଦୟାକରି ଆପଣଙ୍କର ଲକ୍ଷଣ ବିଷୟରେ କୁହନ୍ତୁ |",
+  ur: "سلام! میں لائف لائن AI ہوں، آپ کا صحت کا مددگار۔ آج میں آپ کی کیا مدد کر سکتا ہوں؟ براہ کرم اپنے علامات کے بارے میں بتائیں۔"
+};
+
 /* ------------------------------------------------------------------ */
 /*  Simulated Orchestrator                                             */
 /*  In production this calls ../agents/orchestrator.js — here we mock  */
@@ -207,6 +222,33 @@ export function AppProvider({ children }) {
     resetAgentStatuses();
 
     const start = performance.now();
+
+    const lowerContent = content.trim().toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"");
+    const greetingWords = [
+      'hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'namaste', 'hola', 
+      'how are you', 'who are you', 'what is this app', 'hii', 'hy', 'yo',
+      'నమస్కారం', 'నమస్తే', 'नमस्ते', 'नमस्कार', 'வணக்கம்', 'ನಮಸ್ಕಾರ', 'നമസ്കാരം', 'হ্যালো', 'ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ', 'ਨਮਸતે', 'سلام'
+    ];
+    const isGreeting = greetingWords.some(w => lowerContent === w || lowerContent.startsWith(w + ' '));
+
+    if (isGreeting) {
+      const greetingMsg = GREETING_RESPONSES[currentLanguage] || GREETING_RESPONSES['en'];
+      await new Promise(r => setTimeout(r, 450));
+      const elapsed = Math.round(performance.now() - start);
+
+      const assistantMsg = {
+        id: generateId(),
+        role: 'assistant',
+        content: greetingMsg,
+        timestamp: new Date().toISOString(),
+        responseTime: elapsed,
+      };
+
+      setMessages(prev => [...prev, assistantMsg]);
+      setConversationHistory(prev => [...prev, { role: 'assistant', content: assistantMsg.content }]);
+      setIsProcessing(false);
+      return;
+    }
 
     try {
       /* Try to import the real orchestrator; fall back to simulation */
