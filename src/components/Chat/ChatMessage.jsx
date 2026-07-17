@@ -71,19 +71,58 @@ export default function ChatMessage({ message }) {
       <div className="chat-message__body">
         <div className={`chat-message__bubble ${isUser ? '' : 'glass-card'}`}>
           {/* Main text with speaker action */}
-          <div className="chat-message__text-wrapper" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
-            <p className="chat-message__text">{message.content}</p>
-            {!isUser && (
-              <button 
-                type="button"
-                className={`chat-message__speak-btn ${isPlaying ? 'speaking' : ''}`} 
-                onClick={() => speak(message.content)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.15rem', opacity: isPlaying ? 1 : 0.4, transition: 'opacity 0.2s', padding: '0.1rem 0.2rem', userSelect: 'none' }}
-                title={isPlaying ? "Stop speaking" : "Speak response"}
-              >
-                {isPlaying ? '⏹️' : '🔊'}
-              </button>
+          <div className="chat-message__text-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {!isUser && message.agentResults && (
+              <div className="chat-message__bubble-type-header" style={{ marginBottom: '0.25rem' }}>
+                {message.agentResults.health_assessment || message.agentResults.emergency_detection ? (
+                  <span className="chat-message__bubble-badge chat-message__bubble-badge--clinical" style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    padding: '0.2rem 0.65rem',
+                    borderRadius: 'var(--radius-full)',
+                    background: 'rgba(0, 212, 170, 0.15)',
+                    color: 'var(--accent-teal)',
+                    fontSize: '0.72rem',
+                    fontWeight: '700',
+                    border: '1px solid rgba(0, 212, 170, 0.3)',
+                    boxShadow: '0 0 15px rgba(0, 212, 170, 0.15)'
+                  }}>
+                    🩺 Clinical Diagnosis & Action Plan
+                  </span>
+                ) : (
+                  <span className="chat-message__bubble-badge chat-message__bubble-badge--search" style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    padding: '0.2rem 0.65rem',
+                    borderRadius: 'var(--radius-full)',
+                    background: 'rgba(124, 58, 237, 0.15)',
+                    color: '#c084fc',
+                    fontSize: '0.72rem',
+                    fontWeight: '700',
+                    border: '1px solid rgba(124, 58, 237, 0.3)',
+                    boxShadow: '0 0 15px rgba(124, 58, 237, 0.15)'
+                  }}>
+                    🔍 Information Search Result
+                  </span>
+                )}
+              </div>
             )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+              <p className="chat-message__text">{message.content}</p>
+              {!isUser && (
+                <button 
+                  type="button"
+                  className={`chat-message__speak-btn ${isPlaying ? 'speaking' : ''}`} 
+                  onClick={() => speak(message.content)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.15rem', opacity: isPlaying ? 1 : 0.4, transition: 'opacity 0.2s', padding: '0.1rem 0.2rem', userSelect: 'none' }}
+                  title={isPlaying ? "Stop speaking" : "Speak response"}
+                >
+                  {isPlaying ? '⏹️' : '🔊'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
