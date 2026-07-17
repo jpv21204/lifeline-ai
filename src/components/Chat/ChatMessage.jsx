@@ -71,19 +71,21 @@ export default function ChatMessage({ message }) {
       <div className="chat-message__body">
         <div className={`chat-message__bubble ${isUser ? '' : 'glass-card'}`}>
           {/* Main text with speaker action */}
-          <div className="chat-message__text-wrapper" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
-            <p className="chat-message__text">{message.content}</p>
-            {!isUser && (
-              <button 
-                type="button"
-                className={`chat-message__speak-btn ${isPlaying ? 'speaking' : ''}`} 
-                onClick={() => speak(message.content)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.15rem', opacity: isPlaying ? 1 : 0.4, transition: 'opacity 0.2s', padding: '0.1rem 0.2rem', userSelect: 'none' }}
-                title={isPlaying ? "Stop speaking" : "Speak response"}
-              >
-                {isPlaying ? '⏹️' : '🔊'}
-              </button>
-            )}
+          <div className="chat-message__text-wrapper">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', width: '100%' }}>
+              <div className="chat-message__text" style={{ flex: 1 }}>{parseMarkdownToReact(message.content)}</div>
+              {!isUser && (
+                <button 
+                  type="button"
+                  className={`chat-message__speak-btn ${isPlaying ? 'speaking' : ''}`} 
+                  onClick={() => speak(message.content)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.15rem', opacity: isPlaying ? 1 : 0.4, transition: 'opacity 0.2s', padding: '0.1rem 0.2rem', userSelect: 'none', marginTop: '0.2rem' }}
+                  title={isPlaying ? "Stop speaking" : "Speak response"}
+                >
+                  {isPlaying ? '⏹️' : '🔊'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -103,4 +105,75 @@ export default function ChatMessage({ message }) {
       )}
     </div>
   );
+}
+
+function parseMarkdownToReact(text) {
+  if (!text) return null;
+
+  // Split by lines
+  const lines = text.split('\n');
+  return lines.map((line, idx) => {
+    let cleanLine = line.trim();
+    if (!cleanLine) return <div key={idx} style={{ height: '0.5rem' }} />;
+
+    // Headers: ### Topic
+    if (cleanLine.startsWith('###')) {
+      const headerText = cleanLine.replace(/^###\s*/, '');
+      const content = parseInlineBold(headerText);
+      return (
+        <h4 key={idx} style={{ 
+          margin: '0.85rem 0 0.5rem', 
+          fontFamily: 'var(--font-heading)', 
+          color: 'var(--accent-teal)', 
+          fontSize: '1.02rem',
+          fontWeight: '800',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+          paddingBottom: '0.25rem'
+        }}>
+          {content}
+        </h4>
+      );
+    }
+
+    // Bullet items: * item
+    if (cleanLine.startsWith('*') || cleanLine.startsWith('-')) {
+      const bulletText = cleanLine.replace(/^[*+-]\s*/, '');
+      const content = parseInlineBold(bulletText);
+      return (
+        <li key={idx} style={{ 
+          marginLeft: '1.25rem', 
+          listStyleType: 'disc', 
+          marginBottom: '0.35rem', 
+          lineHeight: '1.45',
+          color: 'var(--text-primary)',
+          fontSize: '0.92rem'
+        }}>
+          {content}
+        </li>
+      );
+    }
+
+    // Standard text line
+    const content = parseInlineBold(line);
+    return (
+      <p key={idx} style={{ 
+        margin: '0 0 0.4rem', 
+        lineHeight: '1.45', 
+        color: 'var(--text-primary)',
+        fontSize: '0.92rem'
+      }}>
+        {content}
+      </p>
+    );
+  });
+}
+
+function parseInlineBold(text) {
+  const parts = text.split('**');
+  return parts.map((part, index) => {
+    if (index % 2 === 1) {
+      return <strong key={index} style={{ color: '#ffffff', fontWeight: '700' }}>{part}</strong>;
+    }
+    return part;
+  });
 }
