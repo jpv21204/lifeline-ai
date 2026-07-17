@@ -414,7 +414,23 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
   results.translation = { language: profile.language || 'en', note: 'Translated.' };
   results.analytics = { queryType: 'Symptom Assessment', responseConfidence: 0.88 };
 
-  const summaryText = generateActionPlanMarkdown(results, profile, isEmergency, isEmergency ? 'Critical' : 'Low');
+  let summaryText = generateActionPlanMarkdown(results, profile, isEmergency, isEmergency ? 'Critical' : 'Low');
+
+  const targetLang = profile.language || 'en';
+  if (targetLang !== 'en') {
+    try {
+      const mod = await import('../agents/translationAgent.js');
+      const ta = new mod.TranslationAgent();
+      const translationResult = await ta.process({
+        text: summaryText,
+        targetLanguage: targetLang
+      });
+      summaryText = translationResult.translatedText || summaryText;
+      results.translation = translationResult;
+    } catch (err) {
+      console.warn("Simulator translation failed:", err);
+    }
+  }
 
   return {
     results,
