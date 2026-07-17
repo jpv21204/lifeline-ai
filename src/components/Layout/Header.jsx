@@ -19,7 +19,7 @@ const LANGUAGES = [
 ];
 
 export default function Header() {
-  const { currentLanguage, setLanguage, isProcessing, logout } = useApp();
+  const { currentLanguage, setLanguage, isProcessing, logout, t } = useApp();
   const [langOpen, setLangOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const langRef = useRef(null);
@@ -52,19 +52,19 @@ export default function Header() {
         {/* Desktop Nav */}
         <nav className="header__nav hide-mobile">
           <NavLink to="/" end className={({ isActive }) => `header__nav-link ${isActive ? 'header__nav-link--active' : ''}`}>
-            <span className="header__nav-icon">🏠</span> Home
+            <span className="header__nav-icon">🏠</span> {t('home')}
           </NavLink>
           <NavLink to="/chat" className={({ isActive }) => `header__nav-link ${isActive ? 'header__nav-link--active' : ''}`}>
-            <span className="header__nav-icon">💬</span> Chat
+            <span className="header__nav-icon">💬</span> {t('chat')}
           </NavLink>
           <NavLink to="/dashboard" className={({ isActive }) => `header__nav-link ${isActive ? 'header__nav-link--active' : ''}`}>
-            <span className="header__nav-icon">📊</span> Dashboard
+            <span className="header__nav-icon">📊</span> {t('dashboard')}
           </NavLink>
           <NavLink to="/schemes" className={({ isActive }) => `header__nav-link ${isActive ? 'header__nav-link--active' : ''}`}>
-            <span className="header__nav-icon">📋</span> Schemes
+            <span className="header__nav-icon">📋</span> {t('schemes')}
           </NavLink>
           <NavLink to="/history" className={({ isActive }) => `header__nav-link ${isActive ? 'header__nav-link--active' : ''}`}>
-            <span className="header__nav-icon">📋</span> History
+            <span className="header__nav-icon">📋</span> {t('history')}
           </NavLink>
         </nav>
 
@@ -101,8 +101,8 @@ export default function Header() {
           </div>
 
           {/* Logout Button */}
-          <button className="btn btn-ghost btn-sm" onClick={logout} title="Logout" style={{ marginLeft: '0.5rem' }}>
-            🚪 <span className="hide-mobile">Logout</span>
+          <button className="btn btn-ghost btn-sm" onClick={logout} title={t('logout')} style={{ marginLeft: '0.5rem' }}>
+            🚪 <span className="hide-mobile">{t('logout')}</span>
           </button>
 
           {/* Mobile Menu Toggle */}
@@ -117,12 +117,12 @@ export default function Header() {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <nav className="header__mobile-nav animate-slideDown">
-          <NavLink to="/" end className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>🏠 Home</NavLink>
-          <NavLink to="/chat" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>💬 Chat</NavLink>
-          <NavLink to="/dashboard" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>📊 Dashboard</NavLink>
-          <NavLink to="/schemes" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>📋 Schemes</NavLink>
-          <NavLink to="/history" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>📋 History</NavLink>
-          <button className="header__mobile-link" onClick={() => { logout(); setMobileMenuOpen(false); }} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textAlign: 'left', width: '100%', padding: 'inherit', font: 'inherit' }}>🚪 Logout</button>
+          <NavLink to="/" end className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>🏠 {t('home')}</NavLink>
+          <NavLink to="/chat" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>💬 {t('chat')}</NavLink>
+          <NavLink to="/dashboard" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>📊 {t('dashboard')}</NavLink>
+          <NavLink to="/schemes" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>📋 {t('schemes')}</NavLink>
+          <NavLink to="/history" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>📋 {t('history')}</NavLink>
+          <button className="header__mobile-link" onClick={() => { logout(); setMobileMenuOpen(false); }} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textAlign: 'left', width: '100%', padding: 'inherit', font: 'inherit' }}>🚪 {t('logout')}</button>
         </nav>
       )}
     </header>

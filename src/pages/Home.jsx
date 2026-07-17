@@ -36,13 +36,13 @@ export default function Home() {
             <span className="navbar-logo-text">LifeLine AI</span>
           </div>
           <nav className="navbar-links">
-            <button className="nav-link-btn" onClick={() => navigate('/chat')}>Chat</button>
-            <button className="nav-link-btn" onClick={() => navigate('/dashboard')}>Dashboard</button>
-            <button className="nav-link-btn" onClick={() => navigate('/schemes')}>Schemes</button>
-            <button className="nav-link-btn" onClick={() => navigate('/history')}>History</button>
+            <button className="nav-link-btn" onClick={() => navigate('/chat')}>{t('chat')}</button>
+            <button className="nav-link-btn" onClick={() => navigate('/dashboard')}>{t('dashboard')}</button>
+            <button className="nav-link-btn" onClick={() => navigate('/schemes')}>{t('schemes')}</button>
+            <button className="nav-link-btn" onClick={() => navigate('/history')}>{t('history')}</button>
           </nav>
           <div className="navbar-actions">
-            <button className="nav-btn-primary" onClick={() => navigate('/chat')}>Try it now</button>
+            <button className="nav-btn-primary" onClick={() => navigate('/chat')}>{t('tryItNow')}</button>
           </div>
         </div>
       </header>
@@ -51,7 +51,7 @@ export default function Home() {
       <main className="hero-container-premium">
         <div className="hero-text-content">
           <h1 className="hero-title-premium">
-            Talk to LifeLine AI – <span className="text-highlight">Smarter, Faster, Better</span>
+            {t('heroTitle').split('–')[0]} – <span className="text-highlight">{t('heroTitle').split('–')[1] || ''}</span>
           </h1>
           <p className="hero-subtitle-premium">
             {t('tagline')}
@@ -90,9 +90,9 @@ export default function Home() {
       {/* Get in Touch Section */}
       <section className="contact-section-premium">
         <div className="contact-divider" />
-        <h2 className="contact-title">Get in touch</h2>
+        <h2 className="contact-title">{t('getInTouch')}</h2>
         <p className="contact-subtitle">
-          Got questions or need assistance? LifeLine AI is here to help. Reach out and we'll get back to you as soon as possible.
+          {t('contactDesc')}
         </p>
 
         <form className="contact-form-pill glass-card" onSubmit={handleContactSubmit}>
@@ -105,13 +105,13 @@ export default function Home() {
           />
           <input
             type="email"
-            placeholder="Email"
+            placeholder={t('email')}
             value={contactForm.email}
             onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
             required
           />
           <button type="submit" className="contact-submit-btn">
-            {submitted ? 'Sent! ✓' : 'Contact us'}
+            {submitted ? 'Sent! ✓' : t('contactUs')}
           </button>
         </form>
       </section>
