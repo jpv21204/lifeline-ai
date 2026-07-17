@@ -174,8 +174,15 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
   const lowerMsg = userMessage.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"");
   const isEmergency = /chest pain|difficulty breathing|unconscious|heart attack|stroke|bleeding|seizure|accident|not breathing|emergency/i.test(userMessage);
 
+  // Define clinical indicators that force the full pipeline
+  const personalIndicators = ['suffering', 'days', 'last', 'i have', 'i am', 'my ', 'since', 'feel', 'hurt', 'pain in'];
+  const symptomKeywords = ['fever', 'cough', 'cold', 'headache', 'body pain', 'sore throat', 'fatigue', 'nausea', 'vomiting', 'diarrhea', 'chest pain', 'breathlessness', 'difficulty breathing', 'rash', 'swelling', 'dizziness', 'weakness', 'bleeding', 'wound', 'injury', 'choke', 'seizure', 'unconscious'];
+  const hasPersonalIndicator = personalIndicators.some(word => lowerMsg.includes(word));
+  const hasSymptom = symptomKeywords.some(word => lowerMsg.includes(word));
+  const forceClinical = (hasSymptom && hasPersonalIndicator) || isEmergency;
+
   // Dynamic FAQ query checks
-  const matchedFaq = CLINICAL_FAQ.find(item => 
+  const matchedFaq = !forceClinical && CLINICAL_FAQ.find(item => 
     item.keywords.some(word => lowerMsg.includes(word))
   );
 
@@ -334,7 +341,7 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
   }
 
   // General conversational query fallback in simulation
-  const isGeneralQuestion = /\b(why|what|how|who|tell|explain|tips|prevent|cure|advice|hello|hi|hey)\b/.test(lowerMsg) || lowerMsg.endsWith('?');
+  const isGeneralQuestion = !forceClinical && (/\b(why|what|how|who|tell|explain|tips|prevent|cure|advice|hello|hi|hey)\b/.test(lowerMsg) || lowerMsg.endsWith('?'));
   if (isGeneralQuestion) {
     const summaryText = GENERAL_FALLBACK;
     results.general_info = { text: summaryText };
