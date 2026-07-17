@@ -124,7 +124,14 @@ export default function ActionPlan({ actionPlan, compact = false }) {
       {/* Hospital Finder Section */}
       {sections.hospital_finder && sections.hospital_finder.hospitals && sections.hospital_finder.hospitals.length > 0 && (
         <div className="action-section">
-          {renderSectionHeader('Nearby Healthcare Facilities', '🏥', 'hospital', 'medium')}
+          {renderSectionHeader(
+            sections.hospital_finder.isAgenticSearch 
+              ? 'Nearby Healthcare Facilities (Live Web Search 🌐)' 
+              : 'Nearby Healthcare Facilities', 
+            '🏥', 
+            'hospital', 
+            'medium'
+          )}
           <div className={`action-section-content ${activeSection === 'hospital' ? 'show' : ''}`}>
             <p className="section-tip">{sections.hospital_finder.tip}</p>
             <div className="hospitals-grid">
