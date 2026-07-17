@@ -42,7 +42,6 @@ export default function Header() {
       <div className="header__inner">
         {/* Logo */}
         <NavLink to="/" className="header__logo">
-          <span className="header__logo-icon">💚</span>
           <div className="header__logo-text">
             <span className="header__logo-title text-gradient">LifeLine AI</span>
             <span className="header__logo-subtitle">Multi-Agent Healthcare Assistant</span>
