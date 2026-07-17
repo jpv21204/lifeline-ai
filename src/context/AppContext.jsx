@@ -452,6 +452,13 @@ export function AppProvider({ children }) {
     } catch {}
     return [];
   });
+  const [searchHistory, setSearchHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('lifeline_search_history');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     try {
       const saved = localStorage.getItem('lifeline_auth');
@@ -553,8 +560,8 @@ export function AppProvider({ children }) {
       setMessages(prev => [...prev, assistantMsg]);
       setConversationHistory(prev => [...prev, { role: 'assistant', content: assistantMsg.content }]);
 
-      /* Save consultation to medical history */
-      const consultation = {
+      /* Save history conditionally */
+      const record = {
         id: assistantMsg.id,
         timestamp: assistantMsg.timestamp,
         symptoms: content.trim(),
@@ -564,11 +571,34 @@ export function AppProvider({ children }) {
         agentResults: orchestratorResult.results,
         responseTime: elapsed,
       };
-      setMedicalHistory(prev => {
-        const updated = [...prev, consultation];
-        try { localStorage.setItem('lifeline_medical_history', JSON.stringify(updated)); } catch {}
-        return updated;
-      });
+
+      const isClinical = orchestratorResult.results && 
+                         (orchestratorResult.results.health_assessment || orchestratorResult.results.emergency_detection);
+
+      if (isClinical) {
+        setMedicalHistory(prev => {
+          const updated = [...prev, record];
+          try { localStorage.setItem('lifeline_medical_history', JSON.stringify(updated)); } catch {}
+          return updated;
+        });
+      } else {
+        // Classify search type
+        let searchType = 'Health FAQ';
+        if (orchestratorResult.results.hospital_finder) searchType = 'Facility Search';
+        else if (orchestratorResult.results.medicine_info) searchType = 'Drug Guidelines';
+        else if (orchestratorResult.results.government_scheme) searchType = 'Scheme Matching';
+
+        const searchRecord = {
+          ...record,
+          searchType
+        };
+
+        setSearchHistory(prev => {
+          const updated = [...prev, searchRecord];
+          try { localStorage.setItem('lifeline_search_history', JSON.stringify(updated)); } catch {}
+          return updated;
+        });
+      }
 
       queryCountRef.current += 1;
       setAnalyticsData(prev => ({
@@ -604,6 +634,11 @@ export function AppProvider({ children }) {
   const clearMedicalHistory = useCallback(() => {
     setMedicalHistory([]);
     try { localStorage.removeItem('lifeline_medical_history'); } catch {}
+  }, []);
+
+  const clearSearchHistory = useCallback(() => {
+    setSearchHistory([]);
+    try { localStorage.removeItem('lifeline_search_history'); } catch {}
   }, []);
 
   const login = useCallback((authData) => {
@@ -657,6 +692,7 @@ export function AppProvider({ children }) {
     analyticsData,
     agents: AGENTS,
     medicalHistory,
+    searchHistory,
     isAuthenticated,
     sendMessage,
     updateProfile,
@@ -665,6 +701,7 @@ export function AppProvider({ children }) {
     clearChat,
     resetAgentStatuses,
     clearMedicalHistory,
+    clearSearchHistory,
     login,
     logout,
   };
