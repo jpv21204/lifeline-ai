@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import './ChatInput.css';
 
 export default function ChatInput() {
-  const { sendMessage, isProcessing } = useApp();
+  const { sendMessage, isProcessing, t } = useApp();
   const [value, setValue] = useState('');
   const textareaRef = useRef(null);
 
@@ -45,7 +45,7 @@ export default function ChatInput() {
         <textarea
           ref={textareaRef}
           className="chat-input__textarea"
-          placeholder="Describe your symptoms or ask about health schemes..."
+          placeholder={t('askSymptoms') + '...'}
           rows={1}
           value={value}
           onChange={e => setValue(e.target.value)}

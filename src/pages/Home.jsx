@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 import './Home.css';
 
 export default function Home() {
   const navigate = useNavigate();
+  const { t } = useApp();
   const [contactForm, setContactForm] = useState({ name: '', email: '' });
   const [submitted, setSubmitted] = useState(false);
 
@@ -52,7 +54,7 @@ export default function Home() {
             Talk to LifeLine AI – <span className="text-highlight">Smarter, Faster, Better</span>
           </h1>
           <p className="hero-subtitle-premium">
-            Your community healthcare assistant. Describe your symptoms or ask health queries in 12 Indian languages.
+            {t('tagline')}
           </p>
         </div>
 
@@ -80,7 +82,7 @@ export default function Home() {
         <div className="hero-action-wrapper">
           <button className="speak-button-premium" onClick={() => navigate('/chat')}>
             <span className="pulse-dot" />
-            Start Consultation
+            {t('startConsultation')}
           </button>
         </div>
       </main>
@@ -96,7 +98,7 @@ export default function Home() {
         <form className="contact-form-pill glass-card" onSubmit={handleContactSubmit}>
           <input
             type="text"
-            placeholder="Name"
+            placeholder={t('name')}
             value={contactForm.name}
             onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
             required

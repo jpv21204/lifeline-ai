@@ -20,7 +20,7 @@ const PROCESSING_MESSAGES = [
 ];
 
 export default function ChatWindow() {
-  const { messages, isProcessing, sendMessage, agentStatuses } = useApp();
+  const { messages, isProcessing, sendMessage, agentStatuses, t } = useApp();
   const bottomRef = useRef(null);
   const processingMsgRef = useRef(0);
 
@@ -52,11 +52,10 @@ export default function ChatWindow() {
           <div className="chat-window__welcome animate-fadeInUp">
             <div className="chat-window__welcome-icon">🩺</div>
             <h2 className="chat-window__welcome-title">
-              Welcome to <span className="text-gradient">LifeLine AI</span>
+              {t('welcome')}
             </h2>
             <p className="chat-window__welcome-desc">
-              Describe your symptoms, ask about government health schemes, or get medicine information. 
-              Our 8 AI agents work together to help you.
+              {t('tagline')}
             </p>
           </div>
 

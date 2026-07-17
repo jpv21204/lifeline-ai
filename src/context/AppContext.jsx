@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import translationsData from '../data/translations.json';
 
 const AppContext = createContext(null);
 
@@ -304,12 +305,26 @@ export function AppProvider({ children }) {
 
   const setLanguage = useCallback((lang) => {
     setCurrentLanguage(lang);
+    setUserProfile(prev => {
+      const updated = { ...prev, language: lang };
+      try { localStorage.setItem('lifeline_profile', JSON.stringify(updated)); } catch {}
+      return updated;
+    });
     setAnalyticsData(prev => {
       const langs = new Set(prev.languagesUsed);
       langs.add(lang);
       return { ...prev, languagesUsed: langs };
     });
   }, []);
+
+  const t = useCallback((key) => {
+    try {
+      const lang = currentLanguage || 'en';
+      return translationsData[lang]?.[key] || translationsData['en']?.[key] || key;
+    } catch {
+      return key;
+    }
+  }, [currentLanguage]);
 
   const clearChat = useCallback(() => {
     setMessages([]);
@@ -331,6 +346,7 @@ export function AppProvider({ children }) {
     sendMessage,
     updateProfile,
     setLanguage,
+    t,
     clearChat,
     resetAgentStatuses,
     clearMedicalHistory,
