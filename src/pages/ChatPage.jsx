@@ -2,12 +2,10 @@ import React, { useState } from 'react';
 import Sidebar from '../components/Layout/Sidebar';
 import ChatWindow from '../components/Chat/ChatWindow';
 import ChatInput from '../components/Chat/ChatInput';
-import AgentActivityPanel from '../components/Chat/AgentActivityPanel';
 import './ChatPage.css';
 
 export default function ChatPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isAgentPanelOpen, setIsAgentPanelOpen] = useState(false);
 
   return (
     <div className="chat-page-container">
@@ -15,21 +13,9 @@ export default function ChatPage() {
       <div className="mobile-chat-controls">
         <button 
           className="mobile-btn" 
-          onClick={() => {
-            setIsSidebarOpen(!isSidebarOpen);
-            setIsAgentPanelOpen(false);
-          }}
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         >
           👤 Profile Form
-        </button>
-        <button 
-          className="mobile-btn" 
-          onClick={() => {
-            setIsAgentPanelOpen(!isAgentPanelOpen);
-            setIsSidebarOpen(false);
-          }}
-        >
-          🧠 Active Agents
         </button>
       </div>
 
@@ -48,25 +34,13 @@ export default function ChatPage() {
           <ChatWindow />
           <ChatInput />
         </div>
-
-        {/* Right column: Agent Activity Visualization */}
-        <div className={`chat-agents-col ${isAgentPanelOpen ? 'open' : ''}`}>
-          <div className="mobile-close-header">
-            <h4>AI Agent Activity</h4>
-            <button onClick={() => setIsAgentPanelOpen(false)}>✕</button>
-          </div>
-          <AgentActivityPanel />
-        </div>
       </div>
 
       {/* Backdrop for mobile drawer overlays */}
-      {(isSidebarOpen || isAgentPanelOpen) && (
+      {isSidebarOpen && (
         <div 
           className="mobile-overlay" 
-          onClick={() => {
-            setIsSidebarOpen(false);
-            setIsAgentPanelOpen(false);
-          }}
+          onClick={() => setIsSidebarOpen(false)}
         ></div>
       )}
     </div>

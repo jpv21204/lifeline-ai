@@ -115,37 +115,6 @@ export default function Sidebar({ isOpen, onClose }) {
           </div>
         )}
 
-        {/* Agent Panel */}
-        <div className="sidebar__agents">
-          <div className="sidebar__agents-header">
-            <h5 className="sidebar__agents-title">AI Agents</h5>
-            <div className="sidebar__agents-badges">
-              {activeCount > 0 && (
-                <span className="badge badge--teal">{activeCount} active</span>
-              )}
-              {completeCount > 0 && (
-                <span className="badge badge--green">{completeCount} done</span>
-              )}
-            </div>
-          </div>
-
-          <div className="sidebar__agents-list">
-            {agents.map((agent, i) => {
-              const status = agentStatuses[agent.id];
-              return (
-                <div
-                  key={agent.id}
-                  className={`sidebar__agent ${status?.status === 'processing' ? 'sidebar__agent--active' : ''} ${status?.status === 'complete' ? 'sidebar__agent--complete' : ''}`}
-                  style={{ animationDelay: `${i * 0.05}s` }}
-                >
-                  <span className="sidebar__agent-emoji">{agent.emoji}</span>
-                  <span className="sidebar__agent-name">{agent.name.replace(' Agent', '')}</span>
-                  <span className={`agent-status agent-status--${status?.status || 'idle'}`} />
-                </div>
-              );
-            })}
-          </div>
-        </div>
 
         {/* Footer */}
         <div className="sidebar__footer">

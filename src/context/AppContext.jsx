@@ -39,11 +39,133 @@ const GREETING_RESPONSES = {
 /* ------------------------------------------------------------------ */
 /*  Simulated Orchestrator                                             */
 /* ------------------------------------------------------------------ */
+function generateActionPlanMarkdown(results, userProfile, isEmergency, urgencyLabel) {
+  let md = '';
+
+  if (isEmergency) {
+    const em = results.emergency_detection || {};
+    md += `### 🚨 **EMERGENCY WARNING**\n`;
+    md += `**${em.warningMessage || em.warning || 'Critical emergency condition detected. Immediate response required.'}**\n\n`;
+    md += `**Immediate Actions:**\n`;
+    if (em.immediateActions || em.emergencyActions) {
+      const actions = em.immediateActions || em.emergencyActions;
+      actions.forEach(a => { md += `*   🚨 ${a}\n`; });
+    } else {
+      md += `*   Call 108 / 112 for an emergency ambulance immediately.\n*   Rush to the nearest hospital emergency room.\n`;
+    }
+    md += `\n`;
+  }
+
+  // 1. Health Assessment
+  if (results.health_assessment) {
+    const ha = results.health_assessment;
+    md += `### 🩺 Symptom & Health Assessment\n`;
+    md += `*   **Urgency Level:** ${urgencyLabel} Urgency\n`;
+    if (ha.possibleConditions && ha.possibleConditions.length > 0) {
+      md += `*   **Possible Conditions:** ${ha.possibleConditions.join(', ')}\n`;
+    }
+    if (ha.selfCare && ha.selfCare.length > 0) {
+      md += `*   **Care Instructions:**\n`;
+      ha.selfCare.forEach(c => { md += `    *   ${c}\n`; });
+    }
+    if (ha.seekCareIf && ha.seekCareIf.length > 0) {
+      md += `*   **Precautions (Seek immediate care if):**\n`;
+      ha.seekCareIf.forEach(c => { md += `    *   ⚠️ ${c}\n`; });
+    }
+    md += `\n`;
+  }
+
+  // 2. Hospital Finder
+  if (results.hospital_finder && results.hospital_finder.hospitals && results.hospital_finder.hospitals.length > 0) {
+    const hf = results.hospital_finder;
+    md += `### 🏥 Recommended Local Facilities (${hf.isAgenticSearch ? 'Live Web Search 🌐' : 'Local Registry'})\n`;
+    hf.hospitals.slice(0, 3).forEach(h => {
+      const isGovt = h.type?.toLowerCase() === 'government' || h.type?.toLowerCase() === 'phc';
+      md += `*   **${h.name}** (${isGovt ? 'Government' : 'Private'})\n`;
+      md += `    *   📍 Address: ${h.address}\n`;
+      if (h.phone) md += `    *   📞 Phone: ${h.phone}\n`;
+      md += `    *   ⭐ Rating: ${h.rating || 'N/A'} / 5 | 🛏️ Beds: ${h.beds || 'N/A'}\n`;
+    });
+    md += `\n`;
+  }
+
+  // 3. Medicine Info
+  if (results.medicine_info && (results.medicine_info.medicines || results.medicine_info.relevantMedicines)) {
+    const med = results.medicine_info;
+    const medicines = med.medicines || med.relevantMedicines || [];
+    if (medicines.length > 0) {
+      md += `### 💊 Medicine Guidelines & Alternatives\n`;
+      medicines.slice(0, 2).forEach(m => {
+        md += `*   **${m.name || m.genericName}**\n`;
+        if (m.usage) md += `    *   Usage: ${m.usage}\n`;
+        if (m.dosage || m.dosageInfo) md += `    *   Dosage: ${m.dosage || m.dosageInfo}\n`;
+        if (m.warning) md += `    *   ⚠️ Warning: ${m.warning}\n`;
+      });
+      md += `\n`;
+    }
+  }
+
+  // 4. Schemes Info
+  if (results.government_scheme && (results.government_scheme.schemes || results.government_scheme.eligibleSchemes)) {
+    const gs = results.government_scheme;
+    const schemes = gs.schemes || gs.eligibleSchemes || [];
+    if (schemes.length > 0) {
+      md += `### 📋 Government Health Schemes\n`;
+      schemes.slice(0, 2).forEach(s => {
+        md += `*   **${s.name}**\n`;
+        if (s.coverage || s.coverageAmount) md += `    *   Benefit: Coverage of ${s.coverage || s.coverageAmount}\n`;
+        if (s.eligibility) md += `    *   Eligibility: ${s.eligibility.incomeLimit || s.eligibility}\n`;
+      });
+      md += `\n`;
+    }
+  }
+
+  // 5. Followup Care
+  if (results.followup && (results.followup.reminders || results.followup.monitoringAdvice)) {
+    const fo = results.followup;
+    const reminders = fo.reminders || fo.monitoringAdvice || [];
+    if (reminders.length > 0) {
+      md += `### 📅 Monitoring & Follow-up\n`;
+      reminders.slice(0, 3).forEach(r => {
+        md += `*   ${r.action || r.message || r} (${r.when || r.timing || 'Immediate'})\n`;
+      });
+      md += `\n`;
+    }
+  }
+
+  return md.trim();
+}
+
 async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
   const results = {};
   const lowerMsg = userMessage.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"");
   const isEmergency = /chest pain|difficulty breathing|unconscious|heart attack|stroke|bleeding|seizure|accident|not breathing|emergency/i.test(userMessage);
   
+  // Dynamic Knowledge responses inside simulation
+  const mockKnowledge = {
+    malaria: `### 🩺 Understanding Malaria\n\nMalaria is a life-threatening disease spread by the bite of an infected female Anopheles mosquito.\n\n*   **Symptoms:** High fever, shaking chills, muscle aches, fatigue.\n*   **Prevention:** Use bed nets and repellents.\n*   **Treatment:** Antimalarials prescribed by a doctor. Seek medical attention immediately.`,
+    dengue: `### 🦟 Dengue Fever Prevention & Care\n\nDengue is a viral infection transmitted to humans through mosquito bites.\n\n*   **Symptoms:** Sudden high fever, severe headache, joint pains.\n*   **Home Care:** Hydrate extensively. Avoid Aspirin or Ibuprofen.\n*   **Warning Signs:** Persistent vomiting, bleeding gums. Seek emergency care.`,
+    fever: `### 🌡️ Fever Management Care Guide\n\nA fever is a sign that your body is fighting off infection.\n\n*   **Care:** Drink fluids, rest, and take Paracetamol (500mg) as needed.\n*   **When to see a Doctor:** Temp > 103°F (39.4°C) or lasting more than 3 days.`,
+    cough: `### 💨 Cough Relief Guidance\n\nA cough reflex clears your airway of irritants and mucus.\n\n*   **Home Remedies:** Warm salt water gargles, herbal tea with honey.\n*   **When to see a Doctor:** Cough lasting > 3 weeks, chest pain, or coughing up blood.`,
+    hydration: `### 💧 The Importance of Hydration\n\nStaying hydrated regulates body temperature and flushes toxins.\n\n*   **Guideline:** Aim for 2.5 to 3 liters of water per day.`
+  };
+
+  const foundKeyword = Object.keys(mockKnowledge).find(key => lowerMsg.includes(key));
+  if (foundKeyword && (lowerMsg.startsWith('what is') || lowerMsg.startsWith('explain') || lowerMsg.includes('prevent') || lowerMsg.endsWith('?'))) {
+    const text = mockKnowledge[foundKeyword];
+    results.general_info = { text };
+    return {
+      results,
+      actionPlan: {
+        urgency: 'low',
+        urgencyLabel: 'Low',
+        isEmergency: false,
+        summary: text,
+        sections: results
+      }
+    };
+  }
+
   const isHospitalQuery = /\b(hospital|hospitals|clinic|clinics|doctor|doctors|dispensary|phc|chc|medical center|health center)\b/.test(lowerMsg) || 
                           lowerMsg.includes('near me') || 
                           lowerMsg.includes('chittor') || 
@@ -64,7 +186,7 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
     for (const agentId of selectedAgents) {
       setAgentStatuses(prev => ({ ...prev, [agentId]: { status: 'processing', time: null } }));
       const start = performance.now();
-      await new Promise(r => setTimeout(r, 300 + Math.random() * 200));
+      await new Promise(r => setTimeout(r, 200));
       const elapsed = Math.round(performance.now() - start);
       setAgentStatuses(prev => ({ ...prev, [agentId]: { status: 'complete', time: elapsed } }));
     }
@@ -99,8 +221,7 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
           };
         });
       }
-    } catch (e) {
-      console.error("Orchestrator Error:", e);
+    } catch {
       liveHospitals = [
         { id: 'sim-1', name: 'District General Hospital', address: `Greamspet, ${matchedLocation}`, phone: '08572-232566', rating: 4.2, beds: 120, emergency: true, ayushmanBharat: true, type: 'government' },
         { id: 'sim-2', name: 'Apollo Clinic', address: `High Road, ${matchedLocation}`, phone: '08572-225999', rating: 4.5, beds: 45, emergency: false, ayushmanBharat: false, type: 'private' }
@@ -111,7 +232,8 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
     results.translation = { language: profile.language || 'en', note: 'Translated.' };
     results.analytics = { queryType: 'Hospital Search', responseConfidence: 0.95 };
 
-    return { results, actionPlan: { urgency: 'low', urgencyLabel: 'Low', isEmergency: false, summary: `🔍 Live Web Search: Found ${liveHospitals.length} hospitals in ${matchedLocation} in real-time.`, sections: results } };
+    const summaryText = generateActionPlanMarkdown(results, profile, false, 'Low');
+    return { results, actionPlan: { urgency: 'low', urgencyLabel: 'Low', isEmergency: false, summary: summaryText, sections: results } };
   }
 
   if (isMedicineQuery && !isHospitalQuery && !isSchemeQuery) {
@@ -123,7 +245,7 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
     for (const agentId of selectedAgents) {
       setAgentStatuses(prev => ({ ...prev, [agentId]: { status: 'processing', time: null } }));
       const start = performance.now();
-      await new Promise(r => setTimeout(r, 300 + Math.random() * 200));
+      await new Promise(r => setTimeout(r, 200));
       const elapsed = Math.round(performance.now() - start);
       setAgentStatuses(prev => ({ ...prev, [agentId]: { status: 'complete', time: elapsed } }));
     }
@@ -132,7 +254,8 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
     results.translation = { language: profile.language || 'en', note: 'Translated.' };
     results.analytics = { queryType: 'Medicine Query', responseConfidence: 0.92 };
 
-    return { results, actionPlan: { urgency: 'low', urgencyLabel: 'Low', isEmergency: false, summary: `💊 Medicine Info Agent: Retrieved generic guidelines for dosage and warnings.`, sections: results } };
+    const summaryText = generateActionPlanMarkdown(results, profile, false, 'Low');
+    return { results, actionPlan: { urgency: 'low', urgencyLabel: 'Low', isEmergency: false, summary: summaryText, sections: results } };
   }
 
   if (isSchemeQuery && !isHospitalQuery && !isMedicineQuery) {
@@ -144,7 +267,7 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
     for (const agentId of selectedAgents) {
       setAgentStatuses(prev => ({ ...prev, [agentId]: { status: 'processing', time: null } }));
       const start = performance.now();
-      await new Promise(r => setTimeout(r, 300 + Math.random() * 200));
+      await new Promise(r => setTimeout(r, 200));
       const elapsed = Math.round(performance.now() - start);
       setAgentStatuses(prev => ({ ...prev, [agentId]: { status: 'complete', time: elapsed } }));
     }
@@ -153,27 +276,34 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
     results.translation = { language: profile.language || 'en', note: 'Translated.' };
     results.analytics = { queryType: 'Scheme Matcher', responseConfidence: 0.94 };
 
-    return { results, actionPlan: { urgency: 'low', urgencyLabel: 'Low', isEmergency: false, summary: `📋 Scheme Matching Agent: Evaluated eligibility metrics for healthcare subsidies.`, sections: results } };
+    const summaryText = generateActionPlanMarkdown(results, profile, false, 'Low');
+    return { results, actionPlan: { urgency: 'low', urgencyLabel: 'Low', isEmergency: false, summary: summaryText, sections: results } };
   }
 
-  // ==========================================
-  // ROUTE 4: Full Pipeline Simulator (Symptoms)
-  // ==========================================
-  const agentOrder = [
-    'health_assessment',
-    'emergency_detection',
-    'hospital_finder',
-    'government_scheme',
-    'medicine_info',
-    'followup',
-    'translation',
-    'analytics',
-  ];
+  // General conversational query fallback in simulation
+  const isGeneralQuestion = /\b(why|what|how|who|tell|explain|tips|prevent|cure|advice|hello|hi|hey)\b/.test(lowerMsg) || lowerMsg.endsWith('?');
+  if (isGeneralQuestion) {
+    const summaryText = `### 🩺 Conversational Health Information\n\nI am LifeLine AI, your conversational healthcare assistant. I can help analyze symptoms, locate local hospitals, evaluate scheme eligibility, and provide generic medicine guidelines.\n\nTo help me assist you, could you please specify:\n1.  **Your specific symptoms** (e.g. fever, headache, dry cough)?\n2.  **Duration** of symptoms (how many days)?\n3.  **Your location** to find nearby clinics?\n\n*Please note: I am an AI assistant for guidance. Always consult a certified healthcare professional for medical diagnoses.*`;
+    
+    results.general_info = { text: summaryText };
+    return {
+      results,
+      actionPlan: {
+        urgency: 'low',
+        urgencyLabel: 'Low',
+        isEmergency: false,
+        summary: summaryText,
+        sections: results
+      }
+    };
+  }
 
+  // Clinical full pipeline fallback
+  const agentOrder = ['health_assessment', 'emergency_detection', 'hospital_finder', 'government_scheme', 'medicine_info', 'followup', 'translation', 'analytics'];
   for (const agentId of agentOrder) {
     setAgentStatuses(prev => ({ ...prev, [agentId]: { status: 'processing', time: null } }));
     const start = performance.now();
-    await new Promise(r => setTimeout(r, 200 + Math.random() * 200));
+    await new Promise(r => setTimeout(r, 150));
     const elapsed = Math.round(performance.now() - start);
     setAgentStatuses(prev => ({ ...prev, [agentId]: { status: 'complete', time: elapsed } }));
   }
@@ -222,17 +352,18 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
   results.translation = { language: profile.language || 'en', note: 'Translated.' };
   results.analytics = { queryType: 'Symptom Assessment', responseConfidence: 0.88 };
 
-  const actionPlan = {
-    urgency: isEmergency ? 4 : 2,
-    urgencyLabel: isEmergency ? 'Critical' : 'Low',
-    isEmergency,
-    summary: isEmergency
-      ? 'EMERGENCY DETECTED — Call 108 ambulance immediately.'
-      : 'Analysis complete. A personalized care guide and roadmap has been configured below.',
-    sections: results
-  };
+  const summaryText = generateActionPlanMarkdown(results, profile, isEmergency, isEmergency ? 'Critical' : 'Low');
 
-  return { results, actionPlan };
+  return {
+    results,
+    actionPlan: {
+      urgency: isEmergency ? 4 : 2,
+      urgencyLabel: isEmergency ? 'Critical' : 'Low',
+      isEmergency,
+      summary: summaryText,
+      sections: results
+    }
+  };
 }
 
 function extractSymptoms(text) {

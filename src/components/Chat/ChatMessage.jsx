@@ -85,29 +85,7 @@ export default function ChatMessage({ message }) {
               </button>
             )}
           </div>
-
-          {/* Agent attribution badges */}
-          {!isUser && message.agentResults && (
-            <div className="chat-message__agents">
-              {Object.keys(message.agentResults).map(agentId => {
-                const meta = AGENT_META[agentId];
-                if (!meta) return null;
-                return (
-                  <span key={agentId} className="chat-message__agent-badge badge badge--neutral">
-                    {meta.emoji} {meta.label}
-                  </span>
-                );
-              })}
-            </div>
-          )}
         </div>
-
-        {/* Action Plan (assistant messages with actionPlan) */}
-        {!isUser && message.actionPlan && (
-          <div className="chat-message__action-plan animate-fadeInUp delay-2">
-            <ActionPlan actionPlan={message.actionPlan} agentResults={message.agentResults} />
-          </div>
-        )}
 
         {/* Timestamp & response time */}
         <div className="chat-message__meta">
