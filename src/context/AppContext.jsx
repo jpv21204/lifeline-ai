@@ -474,6 +474,33 @@ export function AppProvider({ children }) {
   });
   const [currentLanguage, setCurrentLanguage] = useState('en');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [themeContext, setThemeContext] = useState('neutral');
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      setThemeContext('neutral');
+      return;
+    }
+    const lastMsg = [...messages].reverse().find(m => m.role === 'assistant');
+    if (!lastMsg || lastMsg.isError) {
+      setThemeContext('neutral');
+      return;
+    }
+    if (lastMsg.agentResults) {
+      const results = lastMsg.agentResults;
+      if (results.health_assessment || results.emergency_detection) {
+        if (lastMsg.actionPlan?.isEmergency) {
+          setThemeContext('emergency');
+        } else {
+          setThemeContext('clinical');
+        }
+      } else {
+        setThemeContext('search');
+      }
+    } else {
+      setThemeContext('neutral');
+    }
+  }, [messages]);
   const [conversationHistory, setConversationHistory] = useState([]);
   const [analyticsData, setAnalyticsData] = useState({
     totalQueries: 0,
@@ -668,6 +695,7 @@ export function AppProvider({ children }) {
     agents: AGENTS,
     medicalHistory,
     isAuthenticated,
+    themeContext,
     sendMessage,
     updateProfile,
     setLanguage,

@@ -1,10 +1,13 @@
 import React from 'react';
 import Header from './Header';
+import { useApp } from '../../context/AppContext';
 import './Layout.css';
 
 export default function Layout({ children }) {
+  const { themeContext } = useApp();
+
   return (
-    <div className="layout">
+    <div className={`layout layout--context-${themeContext || 'neutral'}`}>
       {/* Animated background orbs */}
       <div className="layout__bg" aria-hidden="true">
         <div className="layout__orb layout__orb--1" />

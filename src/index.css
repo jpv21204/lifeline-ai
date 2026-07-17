@@ -901,3 +901,43 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(0, 212, 170, 0.1);
   box-shadow: 0 8px 30px rgba(0, 212, 170, 0.2);
 }
+
+/* ============================================
+   Adaptive Contextual Theme System
+   ============================================ */
+:root {
+  /* Default variables - Neutral */
+  --theme-orb-1: rgba(0, 212, 170, 0.25);
+  --theme-orb-2: rgba(124, 58, 237, 0.2);
+  --theme-orb-3: rgba(59, 130, 246, 0.15);
+  --accent-primary: var(--accent-teal);
+  --accent-primary-dim: var(--accent-teal-dim);
+}
+
+.layout--context-clinical {
+  --theme-orb-1: rgba(16, 185, 129, 0.28); /* Bio-green */
+  --theme-orb-2: rgba(5, 150, 105, 0.2);
+  --theme-orb-3: rgba(6, 182, 212, 0.15);
+  --accent-primary: var(--accent-green);
+  --accent-primary-dim: rgba(16, 185, 129, 0.15);
+  --gradient-primary: linear-gradient(135deg, var(--accent-green), var(--accent-teal));
+}
+
+.layout--context-emergency {
+  --theme-orb-1: rgba(239, 68, 68, 0.35); /* Crimson Red Alert */
+  --theme-orb-2: rgba(185, 28, 28, 0.25);
+  --theme-orb-3: rgba(245, 158, 11, 0.15);
+  --accent-primary: var(--accent-red);
+  --accent-primary-dim: rgba(239, 68, 68, 0.15);
+  --gradient-primary: linear-gradient(135deg, var(--accent-red), #b91c1c);
+}
+
+.layout--context-search {
+  --theme-orb-1: rgba(139, 92, 246, 0.28); /* Indigo Aura */
+  --theme-orb-2: rgba(99, 102, 241, 0.2);
+  --theme-orb-3: rgba(236, 72, 153, 0.15);
+  --accent-primary: #8b5cf6;
+  --accent-primary-dim: rgba(139, 92, 246, 0.15);
+  --gradient-primary: linear-gradient(135deg, #8b5cf6, var(--accent-purple));
+}
+

@@ -27,31 +27,32 @@
   position: absolute;
   border-radius: 50%;
   filter: blur(100px);
-  opacity: 0.25;
+  opacity: 0.35;
+  transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .layout__orb--1 {
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.25), transparent 70%);
+  width: 550px;
+  height: 550px;
+  background: radial-gradient(circle, var(--theme-orb-1), transparent 70%);
   top: -10%;
   right: -5%;
   animation: orbFloat1 25s ease-in-out infinite;
 }
 
 .layout__orb--2 {
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.2), transparent 70%);
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, var(--theme-orb-2), transparent 70%);
   bottom: 10%;
   left: -5%;
   animation: orbFloat2 30s ease-in-out infinite;
 }
 
 .layout__orb--3 {
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(6, 182, 212, 0.15), transparent 70%);
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, var(--theme-orb-3), transparent 70%);
   top: 50%;
   left: 40%;
   animation: orbFloat1 20s ease-in-out infinite reverse;
