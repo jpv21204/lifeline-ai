@@ -55,7 +55,7 @@ export class HospitalAgent {
               district: addr.county || city,
               state: addr.state || 'India',
               type: isGovt ? 'government' : 'private',
-              specialties: [...new Set(['General Medicine', 'Emergency', ...specialties, isGovt ? 'Pediatrics' : 'Cardiology'])],
+              specialties: isGovt ? ['General Medicine', 'Emergency', 'Pediatrics'] : ['General Medicine', 'Cardiology', 'Orthopedics'],
               emergency: displayNameLower.includes('emergency') || displayNameLower.includes('trauma') || displayNameLower.includes('critical') || Math.random() > 0.4,
               beds: Math.floor(20 + Math.random() * 200),
               phone: isGovt ? '104' : `+91 ${Math.floor(6000000000 + Math.random() * 3999999999)}`,

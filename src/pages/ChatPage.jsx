@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import Sidebar from '../components/Layout/Sidebar';
 import ChatWindow from '../components/Chat/ChatWindow';
 import ChatInput from '../components/Chat/ChatInput';
+import { useApp } from '../context/AppContext';
 import './ChatPage.css';
 
 export default function ChatPage() {
+  const { t } = useApp();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
@@ -15,7 +17,7 @@ export default function ChatPage() {
           className="mobile-btn" 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         >
-          👤 Profile Form
+          👤 {t('profile')}
         </button>
       </div>
 
@@ -23,7 +25,7 @@ export default function ChatPage() {
         {/* Left column: Sidebar / Profile */}
         <div className={`chat-sidebar-col ${isSidebarOpen ? 'open' : ''}`}>
           <div className="mobile-close-header">
-            <h4>User Health Profile</h4>
+            <h4>{t('profile')}</h4>
             <button onClick={() => setIsSidebarOpen(false)}>✕</button>
           </div>
           <Sidebar />

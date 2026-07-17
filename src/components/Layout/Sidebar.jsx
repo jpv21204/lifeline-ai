@@ -11,7 +11,7 @@ const CITIES = [
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
-  const { userProfile, updateProfile, agentStatuses, agents, isProcessing } = useApp();
+  const { userProfile, updateProfile, agentStatuses, agents, isProcessing, t } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({ ...userProfile });
 
@@ -43,9 +43,9 @@ export default function Sidebar({ isOpen, onClose }) {
             <span className="sidebar__avatar-text">{initials}</span>
           </div>
           <div className="sidebar__profile-info">
-            <h4 className="sidebar__name">{userProfile.name || 'Set Your Profile'}</h4>
+            <h4 className="sidebar__name">{userProfile.name || t('setYourProfile')}</h4>
             <p className="sidebar__location">
-              📍 {userProfile.location || 'Location not set'}
+              📍 {userProfile.location || t('locationNotSet')}
             </p>
           </div>
           <button className="btn btn-ghost btn-sm sidebar__edit-btn" onClick={() => setIsEditing(!isEditing)}>
@@ -56,13 +56,13 @@ export default function Sidebar({ isOpen, onClose }) {
         {/* Profile Form */}
         {isEditing && (
           <div className="sidebar__form glass-card animate-slideDown">
-            <h5 className="sidebar__form-title">Quick Profile</h5>
+            <h5 className="sidebar__form-title">{t('quickProfile')}</h5>
 
             <div className="sidebar__field">
-              <label>Name</label>
+              <label>{t('name')}</label>
               <input
                 type="text"
-                placeholder="Your name"
+                placeholder={t('name')}
                 value={formData.name}
                 onChange={e => handleChange('name', e.target.value)}
               />
@@ -70,10 +70,10 @@ export default function Sidebar({ isOpen, onClose }) {
 
             <div className="sidebar__field-row">
               <div className="sidebar__field">
-                <label>Age</label>
+                <label>{t('age')}</label>
                 <input
                   type="number"
-                  placeholder="Age"
+                  placeholder={t('age')}
                   min="0"
                   max="120"
                   value={formData.age}
@@ -81,26 +81,26 @@ export default function Sidebar({ isOpen, onClose }) {
                 />
               </div>
               <div className="sidebar__field">
-                <label>Gender</label>
+                <label>{t('gender')}</label>
                 <select value={formData.gender} onChange={e => handleChange('gender', e.target.value)}>
-                  <option value="">Select</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
+                  <option value="">{t('all')}</option>
+                  <option value="Male">{t('male')}</option>
+                  <option value="Female">{t('female')}</option>
+                  <option value="Other">{t('other')}</option>
                 </select>
               </div>
             </div>
 
             <div className="sidebar__field">
-              <label>Location</label>
+              <label>{t('location')}</label>
               <select value={formData.location} onChange={e => handleChange('location', e.target.value)}>
-                <option value="">Select City</option>
+                <option value="">{t('selectCity')}</option>
                 {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
 
             <div className="sidebar__field">
-              <label>Existing Conditions</label>
+              <label>{t('existingConditions')}</label>
               <input
                 type="text"
                 placeholder="e.g. Diabetes, Hypertension"
@@ -110,7 +110,7 @@ export default function Sidebar({ isOpen, onClose }) {
             </div>
 
             <button className="btn btn-primary btn-sm w-full" onClick={handleSave}>
-              Save Profile
+              {t('saveProfile')}
             </button>
           </div>
         )}

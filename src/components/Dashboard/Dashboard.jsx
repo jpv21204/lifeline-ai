@@ -5,7 +5,7 @@ import './Dashboard.css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { messages, analyticsData } = useApp();
+  const { messages, analyticsData, t } = useApp();
 
   // Filter messages with actionPlan
   const pastAssessments = messages
@@ -18,20 +18,29 @@ export default function Dashboard() {
     }))
     .reverse();
 
-  // Mock community health trends (using CSS bar charts)
+  // Translated trends
   const trends = [
-    { name: 'Fever / Flu', percentage: 75, color: '#3b82f6', count: 142 },
-    { name: 'Respiratory / Cough', percentage: 55, color: '#00d4aa', count: 98 },
-    { name: 'Maternal Care', percentage: 40, color: '#7c3aed', count: 68 },
-    { name: 'Hypertension / BP', percentage: 30, color: '#f59e0b', count: 52 },
-    { name: 'Dengue Suspected', percentage: 15, color: '#ef4444', count: 18 }
+    { name: t('feverFlu') || 'Fever / Flu', percentage: 75, color: '#3b82f6', count: 142 },
+    { name: t('respiratoryCough') || 'Respiratory / Cough', percentage: 55, color: '#00d4aa', count: 98 },
+    { name: t('categoryMaternalChild') || 'Maternal Care', percentage: 40, color: '#7c3aed', count: 68 },
+    { name: t('hypertensionBP') || 'Hypertension / BP', percentage: 30, color: '#f59e0b', count: 52 },
+    { name: t('dengueSuspected') || 'Dengue Suspected', percentage: 15, color: '#ef4444', count: 18 }
   ];
+
+  const getUrgencyTranslation = (urg) => {
+    const u = String(urg).toLowerCase();
+    if (u.includes('low')) return t('urgencyLow')?.split(' - ')[0] || 'Low';
+    if (u.includes('medium') || u.includes('moderate')) return t('urgencyMedium')?.split(' - ')[0] || 'Medium';
+    if (u.includes('high') || u.includes('very high')) return t('urgencyHigh')?.split(' - ')[0] || 'High';
+    if (u.includes('critical') || u.includes('emergency')) return t('urgencyCritical')?.split(' - ')[0] || 'Critical';
+    return urg;
+  };
 
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
-        <h2>📊 Community Health & Agent Analytics</h2>
-        <p className="subtitle">Real-time statistics on AI system coordination and community concerns.</p>
+        <h2>📊 {t('communityTrendsHeader')}</h2>
+        <p className="subtitle">{t('communityTrendsSubtitle')}</p>
       </div>
 
       {/* Analytics Overview Grid */}
@@ -40,7 +49,7 @@ export default function Dashboard() {
           <div className="stat-icon">💬</div>
           <div className="stat-info">
             <span className="stat-value">{analyticsData.totalQueries}</span>
-            <span className="stat-label">Total Health Queries</span>
+            <span className="stat-label">{t('totalHealthQueries')}</span>
           </div>
         </div>
 
@@ -48,7 +57,7 @@ export default function Dashboard() {
           <div className="stat-icon">🤖</div>
           <div className="stat-info">
             <span className="stat-value">8 / 8</span>
-            <span className="stat-label">Agents Operational</span>
+            <span className="stat-label">{t('agentsOperational')}</span>
           </div>
         </div>
 
@@ -60,7 +69,7 @@ export default function Dashboard() {
                 ? `${(analyticsData.avgResponseTime / 1000).toFixed(1)}s` 
                 : '1.2s'}
             </span>
-            <span className="stat-label">Avg Coordination Time</span>
+            <span className="stat-label">{t('avgCoordinationTime')}</span>
           </div>
         </div>
 
@@ -68,7 +77,7 @@ export default function Dashboard() {
           <div className="stat-icon">🚨</div>
           <div className="stat-info">
             <span className="stat-value">{analyticsData.emergencyCount}</span>
-            <span className="stat-label">Emergencies Flagged</span>
+            <span className="stat-label">{t('emergenciesFlagged')}</span>
           </div>
         </div>
       </div>
@@ -76,37 +85,37 @@ export default function Dashboard() {
       <div className="dashboard-body-grid">
         {/* Community Health Trends */}
         <div className="trends-card glass-card">
-          <h4>📈 Community Health Concern Trends</h4>
-          <p className="card-desc">Anonymized symptom tracking for district healthcare response.</p>
+          <h4>📈 {t('trendsHeader')}</h4>
+          <p className="card-desc">{t('trendsDesc')}</p>
           <div className="trends-list">
-            {trends.map((t, idx) => (
+            {trends.map((tItem, idx) => (
               <div key={idx} className="trend-item">
                 <div className="trend-info">
-                  <span className="trend-name">{t.name}</span>
-                  <span className="trend-count">{t.count} cases</span>
+                  <span className="trend-name">{tItem.name}</span>
+                  <span className="trend-count">{tItem.count} {t('cases')}</span>
                 </div>
                 <div className="trend-bar-wrapper">
                   <div 
                     className="trend-bar" 
-                    style={{ width: `${t.percentage}%`, backgroundColor: t.color }}
+                    style={{ width: `${tItem.percentage}%`, backgroundColor: tItem.color }}
                   ></div>
                 </div>
               </div>
             ))}
           </div>
           <div className="trends-footer-tip">
-            💡 <strong>District Alert:</strong> Malaria/Dengue season. Mosquito control suggested in Karimnagar/Warangal districts.
+            💡 <strong>{t('districtAlert')}</strong> {t('districtAlertText')}
           </div>
         </div>
 
         {/* Recent Consultations */}
         <div className="recent-card glass-card">
-          <h4>🕒 Your Recent Consultations</h4>
+          <h4>🕒 {t('recentConsultationsHeader')}</h4>
           {pastAssessments.length === 0 ? (
             <div className="empty-recent">
               <div className="empty-icon">🩺</div>
-              <p>No consultations logged yet.</p>
-              <p className="subtext">Start chatting with LifeLine AI to generate your health assessments.</p>
+              <p>{t('noConsultationsLogged')}</p>
+              <p className="subtext">{t('startChattingTip')}</p>
             </div>
           ) : (
             <div className="recent-list">
@@ -117,7 +126,7 @@ export default function Dashboard() {
                     <span className="recent-time">
                       {new Date(a.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
-                    <span className={`recent-urg-badge ${a.urgency.toLowerCase()}`}>{a.urgency}</span>
+                    <span className={`recent-urg-badge ${a.urgency.toLowerCase()}`}>{getUrgencyTranslation(a.urgency)}</span>
                   </div>
                   <p className="recent-summary">{a.summary}</p>
                 </div>
@@ -129,22 +138,22 @@ export default function Dashboard() {
 
       {/* Quick Actions Grid */}
       <div className="quick-actions-section">
-        <h4>⚡ Quick Actions</h4>
+        <h4>⚡ {t('quickActions')}</h4>
         <div className="actions-grid">
           <div className="action-tile glass-card" onClick={() => navigate('/chat')}>
             <span className="tile-icon">🩺</span>
-            <h5>Start Symptom Check</h5>
-            <p>Describe your issue and get guidance.</p>
+            <h5>{t('startSymptomCheckTitle')}</h5>
+            <p>{t('startSymptomCheckDesc')}</p>
           </div>
           <div className="action-tile glass-card" onClick={() => navigate('/schemes')}>
             <span className="tile-icon">📋</span>
-            <h5>Browse Govt Schemes</h5>
-            <p>Check eligibility for state & national plans.</p>
+            <h5>{t('browseGovSchemesTitle')}</h5>
+            <p>{t('browseGovSchemesDesc')}</p>
           </div>
           <div className="action-tile glass-card" onClick={() => alert('Feature coming soon: Offline community database download.')}>
             <span className="tile-icon">📲</span>
-            <h5>Download Offline DB</h5>
-            <p>Save healthcare listings to phone storage.</p>
+            <h5>{t('downloadOfflineDbTitle')}</h5>
+            <p>{t('downloadOfflineDbDesc')}</p>
           </div>
         </div>
       </div>

@@ -175,21 +175,10 @@ export class Orchestrator {
 
     const cleanMsg = message.toLowerCase().trim();
 
-    // Define clinical indicators that force the full pipeline
-    const personalIndicators = ['suffering', 'days', 'last', 'i have', 'i am', 'my ', 'since', 'feel', 'hurt', 'pain in'];
-    const symptomKeywords = ['fever', 'cough', 'cold', 'headache', 'body pain', 'sore throat', 'fatigue', 'nausea', 'vomiting', 'diarrhea', 'chest pain', 'breathlessness', 'difficulty breathing', 'rash', 'swelling', 'dizziness', 'weakness', 'bleeding', 'wound', 'injury', 'choke', 'seizure', 'unconscious'];
-    const hasPersonalIndicator = personalIndicators.some(word => cleanMsg.includes(word));
-    const hasSymptom = symptomKeywords.some(word => cleanMsg.includes(word));
-    
-    const emergencyKeywords = ['chest pain', 'difficulty breathing', 'unconscious', 'heart attack', 'stroke', 'seizure', 'accident', 'not breathing', 'emergency'];
-    const isEmergencyQuery = emergencyKeywords.some(word => cleanMsg.includes(word));
-
-    const forceClinical = (hasSymptom && hasPersonalIndicator) || isEmergencyQuery;
-
     // ==========================================
     // ROUTE 0: Conversational Knowledge Base (Faq match)
     // ==========================================
-    const matchedFaq = !forceClinical && CLINICAL_FAQ.find(item => 
+    const matchedFaq = CLINICAL_FAQ.find(item => 
       item.keywords.some(word => cleanMsg.includes(word))
     );
 
@@ -223,7 +212,7 @@ export class Orchestrator {
     }
 
     // Classic static keyword match
-    const foundKeyword = !forceClinical && Object.keys(KNOWLEDGE_BASE).find(key => cleanMsg.includes(key));
+    const foundKeyword = Object.keys(KNOWLEDGE_BASE).find(key => cleanMsg.includes(key));
     if (foundKeyword && (cleanMsg.startsWith('what is') || cleanMsg.startsWith('explain') || cleanMsg.includes('prevent') || cleanMsg.includes('tips for') || cleanMsg.includes('how to') || cleanMsg.endsWith('?'))) {
       let summaryText = KNOWLEDGE_BASE[foundKeyword];
       
@@ -410,7 +399,7 @@ export class Orchestrator {
     // ==========================================
     // ROUTE 3.5: Conversational Fallback Query
     // ==========================================
-    const isGeneralQuestion = !forceClinical && (/\b(why|what|how|who|tell|explain|tips|prevent|cure|advice|hello|hi|hey)\b/.test(cleanMsg) || cleanMsg.endsWith('?'));
+    const isGeneralQuestion = /\b(why|what|how|who|tell|explain|tips|prevent|cure|advice|hello|hi|hey)\b/.test(cleanMsg) || cleanMsg.endsWith('?');
     if (isGeneralQuestion) {
       let summaryText = GENERAL_FALLBACK;
       

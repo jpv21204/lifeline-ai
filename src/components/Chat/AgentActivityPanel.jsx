@@ -14,7 +14,7 @@ const AGENT_COLORS = {
 };
 
 export default function AgentActivityPanel() {
-  const { agents, agentStatuses, isProcessing } = useApp();
+  const { agents, agentStatuses, isProcessing, t } = useApp();
 
   const activeCount = useMemo(
     () => Object.values(agentStatuses).filter(s => s.status === 'processing').length,
@@ -29,6 +29,20 @@ export default function AgentActivityPanel() {
     [agentStatuses]
   );
 
+  const getAgentTranslation = (agentId) => {
+    switch (agentId) {
+      case 'health_assessment': return t('healthAssessment');
+      case 'emergency_detection': return t('emergency') || 'Emergency';
+      case 'hospital_finder': return t('nearbyHospitals') || 'Hospitals';
+      case 'government_scheme': return t('govSchemes') || 'Schemes';
+      case 'medicine_info': return t('medicines') || 'Medicines';
+      case 'followup': return t('followUp') || 'Follow-up';
+      case 'translation': return t('translate') || 'Translation';
+      case 'analytics': return t('analytics') || 'Analytics';
+      default: return agentId;
+    }
+  };
+
   return (
     <aside className="agent-panel">
       {/* Header */}
@@ -36,8 +50,8 @@ export default function AgentActivityPanel() {
         <div className="agent-panel__header-top">
           <span className="agent-panel__brain">🧠</span>
           <div>
-            <h3 className="agent-panel__title">Orchestrator</h3>
-            <p className="agent-panel__subtitle">Multi-Agent Pipeline</p>
+            <h3 className="agent-panel__title">{t('orchestrator')}</h3>
+            <p className="agent-panel__subtitle">{t('multiAgentPipeline')}</p>
           </div>
         </div>
         <div className={`agent-panel__status-indicator ${isProcessing ? 'agent-panel__status-indicator--active' : ''}`}>
@@ -46,12 +60,12 @@ export default function AgentActivityPanel() {
               <div className="agent-panel__ripple">
                 <span /><span /><span />
               </div>
-              <span className="agent-panel__status-label">Processing</span>
+              <span className="agent-panel__status-label">{t('processing')}</span>
             </>
           ) : (
             <>
               <span className="agent-panel__idle-dot" />
-              <span className="agent-panel__status-label">Ready</span>
+              <span className="agent-panel__status-label">{t('ready')}</span>
             </>
           )}
         </div>
@@ -61,15 +75,15 @@ export default function AgentActivityPanel() {
       <div className="agent-panel__stats">
         <div className="agent-panel__stat">
           <span className="agent-panel__stat-value">{activeCount}</span>
-          <span className="agent-panel__stat-label">Active</span>
+          <span className="agent-panel__stat-label">{t('active')}</span>
         </div>
         <div className="agent-panel__stat">
           <span className="agent-panel__stat-value">{completeCount}</span>
-          <span className="agent-panel__stat-label">Done</span>
+          <span className="agent-panel__stat-label">{t('done')}</span>
         </div>
         <div className="agent-panel__stat">
           <span className="agent-panel__stat-value">{totalTime ? `${(totalTime / 1000).toFixed(1)}s` : '—'}</span>
-          <span className="agent-panel__stat-label">Total</span>
+          <span className="agent-panel__stat-label">{t('total')}</span>
         </div>
       </div>
 
@@ -105,12 +119,12 @@ export default function AgentActivityPanel() {
                     {agent.emoji}
                   </div>
                   <div className="agent-panel__card-info">
-                    <span className="agent-panel__card-name">{agent.name.replace(' Agent', '')}</span>
+                    <span className="agent-panel__card-name">{getAgentTranslation(agent.id)}</span>
                     <span className="agent-panel__card-status">
-                      {isActive && 'Analyzing...'}
-                      {isDone && `Done in ${status.time}ms`}
+                      {isActive && t('analyzing')}
+                      {isDone && `${t('doneIn')} ${status.time}ms`}
                       {isError && 'Error'}
-                      {!isActive && !isDone && !isError && 'Standby'}
+                      {!isActive && !isDone && !isError && t('standby')}
                     </span>
                   </div>
                 </div>
@@ -142,7 +156,7 @@ export default function AgentActivityPanel() {
       <div className="agent-panel__footer">
         <p className="agent-panel__footer-text">
           <span className="agent-panel__footer-icon">⚡</span>
-          Agents process in parallel with intelligent routing
+          {t('parallelProcessingTip')}
         </p>
       </div>
     </aside>

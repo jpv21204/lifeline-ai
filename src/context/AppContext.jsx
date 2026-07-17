@@ -174,15 +174,8 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
   const lowerMsg = userMessage.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"");
   const isEmergency = /chest pain|difficulty breathing|unconscious|heart attack|stroke|bleeding|seizure|accident|not breathing|emergency/i.test(userMessage);
 
-  // Define clinical indicators that force the full pipeline
-  const personalIndicators = ['suffering', 'days', 'last', 'i have', 'i am', 'my ', 'since', 'feel', 'hurt', 'pain in'];
-  const symptomKeywords = ['fever', 'cough', 'cold', 'headache', 'body pain', 'sore throat', 'fatigue', 'nausea', 'vomiting', 'diarrhea', 'chest pain', 'breathlessness', 'difficulty breathing', 'rash', 'swelling', 'dizziness', 'weakness', 'bleeding', 'wound', 'injury', 'choke', 'seizure', 'unconscious'];
-  const hasPersonalIndicator = personalIndicators.some(word => lowerMsg.includes(word));
-  const hasSymptom = symptomKeywords.some(word => lowerMsg.includes(word));
-  const forceClinical = (hasSymptom && hasPersonalIndicator) || isEmergency;
-
   // Dynamic FAQ query checks
-  const matchedFaq = !forceClinical && CLINICAL_FAQ.find(item => 
+  const matchedFaq = CLINICAL_FAQ.find(item => 
     item.keywords.some(word => lowerMsg.includes(word))
   );
 
@@ -341,7 +334,7 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
   }
 
   // General conversational query fallback in simulation
-  const isGeneralQuestion = !forceClinical && (/\b(why|what|how|who|tell|explain|tips|prevent|cure|advice|hello|hi|hey)\b/.test(lowerMsg) || lowerMsg.endsWith('?'));
+  const isGeneralQuestion = /\b(why|what|how|who|tell|explain|tips|prevent|cure|advice|hello|hi|hey)\b/.test(lowerMsg) || lowerMsg.endsWith('?');
   if (isGeneralQuestion) {
     const summaryText = GENERAL_FALLBACK;
     results.general_info = { text: summaryText };
@@ -469,13 +462,6 @@ export function AppProvider({ children }) {
     } catch {}
     return [];
   });
-  const [searchHistory, setSearchHistory] = useState(() => {
-    try {
-      const saved = localStorage.getItem('lifeline_search_history');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return [];
-  });
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     try {
       const saved = localStorage.getItem('lifeline_auth');
@@ -577,8 +563,8 @@ export function AppProvider({ children }) {
       setMessages(prev => [...prev, assistantMsg]);
       setConversationHistory(prev => [...prev, { role: 'assistant', content: assistantMsg.content }]);
 
-      /* Save history conditionally */
-      const record = {
+      /* Save consultation to medical history */
+      const consultation = {
         id: assistantMsg.id,
         timestamp: assistantMsg.timestamp,
         symptoms: content.trim(),
@@ -588,34 +574,11 @@ export function AppProvider({ children }) {
         agentResults: orchestratorResult.results,
         responseTime: elapsed,
       };
-
-      const isClinical = orchestratorResult.results && 
-                         (orchestratorResult.results.health_assessment || orchestratorResult.results.emergency_detection);
-
-      if (isClinical) {
-        setMedicalHistory(prev => {
-          const updated = [...prev, record];
-          try { localStorage.setItem('lifeline_medical_history', JSON.stringify(updated)); } catch {}
-          return updated;
-        });
-      } else {
-        // Classify search type
-        let searchType = 'Health FAQ';
-        if (orchestratorResult.results.hospital_finder) searchType = 'Facility Search';
-        else if (orchestratorResult.results.medicine_info) searchType = 'Drug Guidelines';
-        else if (orchestratorResult.results.government_scheme) searchType = 'Scheme Matching';
-
-        const searchRecord = {
-          ...record,
-          searchType
-        };
-
-        setSearchHistory(prev => {
-          const updated = [...prev, searchRecord];
-          try { localStorage.setItem('lifeline_search_history', JSON.stringify(updated)); } catch {}
-          return updated;
-        });
-      }
+      setMedicalHistory(prev => {
+        const updated = [...prev, consultation];
+        try { localStorage.setItem('lifeline_medical_history', JSON.stringify(updated)); } catch {}
+        return updated;
+      });
 
       queryCountRef.current += 1;
       setAnalyticsData(prev => ({
@@ -651,11 +614,6 @@ export function AppProvider({ children }) {
   const clearMedicalHistory = useCallback(() => {
     setMedicalHistory([]);
     try { localStorage.removeItem('lifeline_medical_history'); } catch {}
-  }, []);
-
-  const clearSearchHistory = useCallback(() => {
-    setSearchHistory([]);
-    try { localStorage.removeItem('lifeline_search_history'); } catch {}
   }, []);
 
   const login = useCallback((authData) => {
@@ -709,7 +667,6 @@ export function AppProvider({ children }) {
     analyticsData,
     agents: AGENTS,
     medicalHistory,
-    searchHistory,
     isAuthenticated,
     sendMessage,
     updateProfile,
@@ -718,7 +675,6 @@ export function AppProvider({ children }) {
     clearChat,
     resetAgentStatuses,
     clearMedicalHistory,
-    clearSearchHistory,
     login,
     logout,
   };

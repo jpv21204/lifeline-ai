@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useApp } from '../../context/AppContext';
 import './ActionPlan.css';
 
 export default function ActionPlan({ actionPlan, compact = false }) {
+  const { t } = useApp();
   const [activeSection, setActiveSection] = useState(null);
 
   if (!actionPlan) return null;
@@ -23,6 +25,14 @@ export default function ActionPlan({ actionPlan, compact = false }) {
     }
   };
 
+  const translateUrgencyLabel = (label) => {
+    const l = String(label).toLowerCase();
+    if (l.includes('critical') || l.includes('emergency')) return t('urgencyCritical').split(' - ')[0];
+    if (l.includes('very high') || l.includes('high')) return t('urgencyHigh').split(' - ')[0];
+    if (l.includes('medium') || l.includes('moderate')) return t('urgencyMedium').split(' - ')[0];
+    return t('urgencyLow').split(' - ')[0];
+  };
+
   const renderSectionHeader = (title, icon, agentKey, priority) => (
     <div 
       className={`action-section-header ${activeSection === agentKey ? 'active' : ''}`}
@@ -38,9 +48,9 @@ export default function ActionPlan({ actionPlan, compact = false }) {
   return (
     <div className={`action-plan-card glass-card ${isEmergency ? 'emergency-glow' : ''}`}>
       <div className="action-plan-header">
-        <h3>📋 Personalized Health Action Plan</h3>
+        <h3>📋 {t('actionPlanHeader')}</h3>
         <div className={`urgency-badge ${getUrgencyClass(urgencyLabel)}`}>
-          {urgencyLabel} Urgency
+          {t('urgencyLevel').replace('{urgency}', translateUrgencyLabel(urgencyLabel))}
         </div>
       </div>
 
@@ -49,16 +59,16 @@ export default function ActionPlan({ actionPlan, compact = false }) {
       {/* Emergency Detection Section */}
       {sections.emergency_detection && (sections.emergency_detection.isEmergency || activeSection === 'emergency') && (
         <div className="action-section emergency-border">
-          {renderSectionHeader('Emergency Critical Response', '📞', 'emergency', 'critical')}
+          {renderSectionHeader(t('emergencyResponse'), '📞', 'emergency', 'critical')}
           <div className="action-section-content show">
             <div className="emergency-alert-box">
               <p className="warning-text">{sections.emergency_detection.warningMessage || sections.emergency_detection.warning}</p>
               <a href={`tel:${sections.emergency_detection.emergencyNumber || '108'}`} className="emergency-call-btn">
-                📞 CALL AMBULANCE ({sections.emergency_detection.emergencyNumber || '108'})
+                📞 {t('callAmbulance')} ({sections.emergency_detection.emergencyNumber || '108'})
               </a>
             </div>
             
-            <h4 className="sub-title">Immediate Actions Required:</h4>
+            <h4 className="sub-title">{t('immediateActions')}</h4>
             <ul className="action-list">
               {(sections.emergency_detection.emergencyActions || sections.emergency_detection.immediateActions || []).map((action, idx) => (
                 <li key={idx} className="action-item-urgent">🚨 {action}</li>
@@ -79,11 +89,11 @@ export default function ActionPlan({ actionPlan, compact = false }) {
       {/* Health Assessment Section */}
       {sections.health_assessment && (
         <div className="action-section">
-          {renderSectionHeader('Symptom & Health Assessment', '🩺', 'health', 'medium')}
+          {renderSectionHeader(t('symptomAssessment'), '🩺', 'health', 'medium')}
           <div className={`action-section-content ${activeSection === 'health' || !compact ? 'show' : ''}`}>
             <div className="info-grid">
               <div>
-                <strong>Matched Symptoms:</strong>
+                <strong>{t('matchedSymptoms')}</strong>
                 <div className="badge-container">
                   {(sections.health_assessment.matchedSymptoms || []).map((s, idx) => (
                     <span key={idx} className="symptom-badge">{s.name || s}</span>
@@ -91,7 +101,7 @@ export default function ActionPlan({ actionPlan, compact = false }) {
                 </div>
               </div>
               <div>
-                <strong>Possible Conditions:</strong>
+                <strong>{t('possibleConditions')}</strong>
                 <div className="badge-container">
                   {(sections.health_assessment.possibleConditions || []).map((c, idx) => (
                     <span key={idx} className="condition-badge">{c}</span>
@@ -100,7 +110,7 @@ export default function ActionPlan({ actionPlan, compact = false }) {
               </div>
             </div>
 
-            <h4 className="sub-title">Care Instructions:</h4>
+            <h4 className="sub-title">{t('careInstructions')}</h4>
             <ul className="list-styled">
               {(sections.health_assessment.recommendations || sections.health_assessment.selfCare || []).map((rec, idx) => (
                 <li key={idx}>{rec}</li>
@@ -109,7 +119,7 @@ export default function ActionPlan({ actionPlan, compact = false }) {
 
             {sections.health_assessment.seekCareIf && sections.health_assessment.seekCareIf.length > 0 && (
               <div className="warning-box">
-                <strong>Seek immediate medical care if you experience:</strong>
+                <strong>{t('seekMedicalCareIf')}</strong>
                 <ul className="warning-list">
                   {sections.health_assessment.seekCareIf.map((item, idx) => (
                     <li key={idx}>⚠️ {item}</li>
@@ -126,8 +136,8 @@ export default function ActionPlan({ actionPlan, compact = false }) {
         <div className="action-section">
           {renderSectionHeader(
             sections.hospital_finder.isAgenticSearch 
-              ? 'Nearby Healthcare Facilities (Live Web Search 🌐)' 
-              : 'Nearby Healthcare Facilities', 
+              ? `${t('nearbyFacilities')} (${t('liveWebSearch')})` 
+              : t('nearbyFacilities'), 
             '🏥', 
             'hospital', 
             'medium'
@@ -143,10 +153,10 @@ export default function ActionPlan({ actionPlan, compact = false }) {
                   </div>
                   <div className="hospital-details">
                     <p>📍 {h.address}</p>
-                    <p>📞 Phone: {h.phone || h.contact || 'N/A'}</p>
-                    <p>⭐ Rating: {h.rating} / 5 | 🛏️ Beds: {h.beds || 'N/A'}</p>
-                    {h.emergency && <span className="em-tag">🚑 Emergency 24/7</span>}
-                    {h.ayushmanBharat && <span className="ab-tag">📋 Ayushman Bharat</span>}
+                    <p>📞 {t('phone')} {h.phone || h.contact || 'N/A'}</p>
+                    <p>⭐ Rating: {h.rating} / 5 | 🛏️ {t('beds')} {h.beds || 'N/A'}</p>
+                    {h.emergency && <span className="em-tag">🚑 {t('emergency247')}</span>}
+                    {h.ayushmanBharat && <span className="ab-tag">📋 {t('ayushmanBharatTag')}</span>}
                   </div>
                   <div className="specialties-container">
                     {(h.specialties || []).slice(0, 3).map((s, sIdx) => (
@@ -163,7 +173,7 @@ export default function ActionPlan({ actionPlan, compact = false }) {
       {/* Government Health Schemes Section */}
       {sections.government_scheme && (
         <div className="action-section">
-          {renderSectionHeader('Government Health Benefits', '📋', 'scheme', 'info')}
+          {renderSectionHeader(t('govBenefits'), '📋', 'scheme', 'info')}
           <div className={`action-section-content ${activeSection === 'scheme' ? 'show' : ''}`}>
             <p className="section-tip">{sections.government_scheme.tip}</p>
             <div className="schemes-list">
@@ -175,10 +185,10 @@ export default function ActionPlan({ actionPlan, compact = false }) {
                   </div>
                   <p className="scheme-desc">{s.description}</p>
                   <div className="scheme-details">
-                    <div>🎯 <strong>Eligibility:</strong> {s.eligibility?.incomeLimit || s.eligibility || 'Check website'}</div>
+                    <div>🎯 <strong>{t('eligibilityStrong')}</strong> {s.eligibility?.incomeLimit || s.eligibility || 'Check website'}</div>
                     {s.documentsRequired && (
                       <div className="docs-needed">
-                        📄 <strong>Required Documents:</strong>
+                        📄 <strong>{t('requiredDocs')}</strong>
                         <div className="doc-badges">
                           {s.documentsRequired.map((doc, docIdx) => (
                             <span key={docIdx} className="doc-badge">{doc}</span>
@@ -189,7 +199,7 @@ export default function ActionPlan({ actionPlan, compact = false }) {
                   </div>
                   {s.website && (
                     <a href={s.website} target="_blank" rel="noopener noreferrer" className="apply-btn">
-                      🔗 Apply Now
+                      🔗 {t('applyNow')}
                     </a>
                   )}
                 </div>
@@ -202,22 +212,22 @@ export default function ActionPlan({ actionPlan, compact = false }) {
       {/* Medicine Information Section */}
       {sections.medicine_info && (
         <div className="action-section">
-          {renderSectionHeader('Medicine Reference & Education', '💊', 'medicine', 'low')}
+          {renderSectionHeader(t('medicineReference'), '💊', 'medicine', 'low')}
           <div className={`action-section-content ${activeSection === 'medicine' ? 'show' : ''}`}>
             <p className="disclaimer-text">{sections.medicine_info.disclaimer}</p>
             <div className="medicines-grid">
               {(sections.medicine_info.medicines || sections.medicine_info.relevantMedicines || []).map((m, idx) => (
                 <div key={idx} className="medicine-card glass-card">
                   <h5>{m.name || m.genericName}</h5>
-                  <p><strong>🩺 Usage:</strong> {m.usage}</p>
-                  <p><strong>🥄 Dosage:</strong> {m.dosage || m.dosageInfo}</p>
-                  <p><strong>⚠️ Warning:</strong> {m.warning || (m.precautions && m.precautions[0])}</p>
+                  <p><strong>🩺 {t('usageLabel')}</strong> {m.usage}</p>
+                  <p><strong>🥄 {t('dosageLabel')}</strong> {m.dosage || m.dosageInfo}</p>
+                  <p><strong>⚠️ {t('warningLabel')}</strong> {m.warning || (m.precautions && m.precautions[0])}</p>
                 </div>
               ))}
             </div>
             {sections.medicine_info.generalAdvice && (
               <div className="general-med-advice">
-                <h5>💡 General Medicine Guidelines</h5>
+                <h5>💡 {t('generalMedGuidelines')}</h5>
                 <ul>
                   {sections.medicine_info.generalAdvice.map((adv, idx) => (
                     <li key={idx}>{adv}</li>
@@ -232,9 +242,9 @@ export default function ActionPlan({ actionPlan, compact = false }) {
       {/* Follow-up Section */}
       {sections.followup && (
         <div className="action-section">
-          {renderSectionHeader('Follow-up Care & Timelines', '📅', 'followup', 'low')}
+          {renderSectionHeader(t('followupCare'), '📅', 'followup', 'low')}
           <div className={`action-section-content ${activeSection === 'followup' || !compact ? 'show' : ''}`}>
-            <h4 className="sub-title">Health Reminders Timeline:</h4>
+            <h4 className="sub-title">{t('healthReminders')}</h4>
             <div className="timeline">
               {(sections.followup.reminders || []).map((r, idx) => (
                 <div key={idx} className={`timeline-item ${r.priority || 'medium'}`}>
@@ -249,7 +259,7 @@ export default function ActionPlan({ actionPlan, compact = false }) {
 
             {sections.followup.monitoring && sections.followup.monitoring.length > 0 && (
               <div className="monitoring-box">
-                <h5>📈 Health Monitoring Checklist</h5>
+                <h5>📈 {t('monitoringChecklist')}</h5>
                 <ul>
                   {sections.followup.monitoring.map((m, idx) => (
                     <li key={idx}>{m}</li>
@@ -263,10 +273,10 @@ export default function ActionPlan({ actionPlan, compact = false }) {
 
       <div className="action-plan-footer">
         <button className="btn btn-secondary" onClick={() => window.print()}>
-          🖨️ Print Action Plan
+          🖨️ {t('printActionPlan')}
         </button>
         <button className="btn btn-ghost" onClick={() => alert('Action plan saved to your Health Profile')}>
-          💾 Save to Profile
+          💾 {t('saveToProfile')}
         </button>
       </div>
     </div>
