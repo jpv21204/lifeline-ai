@@ -58,20 +58,6 @@ export default function ChatWindow() {
               {t('tagline')}
             </p>
           </div>
-
-          <div className="chat-window__prompts">
-            {SUGGESTED_PROMPTS.map((prompt, i) => (
-              <button
-                key={i}
-                className="chat-window__prompt glass-card glass-card--interactive animate-fadeInUp"
-                style={{ animationDelay: `${0.15 + i * 0.1}s` }}
-                onClick={() => sendMessage(prompt.text)}
-              >
-                <span className="chat-window__prompt-emoji">{prompt.emoji}</span>
-                <span className="chat-window__prompt-text">{prompt.text}</span>
-              </button>
-            ))}
-          </div>
         </div>
       ) : (
         /* Messages */

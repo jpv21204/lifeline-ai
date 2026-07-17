@@ -1,6 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useApp } from '../../context/AppContext';
 import ActionPlan from '../Dashboard/ActionPlan';
 import './ChatMessage.css';
+
+const LANG_LOCALES = {
+  en: 'en-US', te: 'te-IN', hi: 'hi-IN', ta: 'ta-IN', kn: 'kn-IN',
+  ml: 'ml-IN', bn: 'bn-IN', pa: 'pa-IN', mr: 'mr-IN', gu: 'gu-IN',
+  or: 'or-IN', ur: 'ur-PK'
+};
 
 const AGENT_META = {
   health_assessment: { emoji: '🩺', label: 'Health' },
@@ -24,6 +31,34 @@ function formatTime(iso) {
 
 export default function ChatMessage({ message }) {
   const isUser = message.role === 'user';
+  const { currentLanguage } = useApp();
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const speak = (text) => {
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      if (isPlaying) {
+        setIsPlaying(false);
+        return;
+      }
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = LANG_LOCALES[currentLanguage] || 'en-US';
+    
+    // Find matching voice
+    const voices = window.speechSynthesis.getVoices();
+    const voice = voices.find(v => v.lang.startsWith(currentLanguage));
+    if (voice) {
+      utterance.voice = voice;
+    }
+
+    utterance.onstart = () => setIsPlaying(true);
+    utterance.onend = () => setIsPlaying(false);
+    utterance.onerror = () => setIsPlaying(false);
+
+    window.speechSynthesis.speak(utterance);
+  };
 
   return (
     <div className={`chat-message ${isUser ? 'chat-message--user' : 'chat-message--assistant'} animate-fadeInUp`}>
@@ -35,8 +70,21 @@ export default function ChatMessage({ message }) {
 
       <div className="chat-message__body">
         <div className={`chat-message__bubble ${isUser ? '' : 'glass-card'}`}>
-          {/* Main text */}
-          <p className="chat-message__text">{message.content}</p>
+          {/* Main text with speaker action */}
+          <div className="chat-message__text-wrapper" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+            <p className="chat-message__text">{message.content}</p>
+            {!isUser && (
+              <button 
+                type="button"
+                className={`chat-message__speak-btn ${isPlaying ? 'speaking' : ''}`} 
+                onClick={() => speak(message.content)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.15rem', opacity: isPlaying ? 1 : 0.4, transition: 'opacity 0.2s', padding: '0.1rem 0.2rem', userSelect: 'none' }}
+                title={isPlaying ? "Stop speaking" : "Speak response"}
+              >
+                {isPlaying ? '⏹️' : '🔊'}
+              </button>
+            )}
+          </div>
 
           {/* Agent attribution badges */}
           {!isUser && message.agentResults && (
