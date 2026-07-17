@@ -17,7 +17,7 @@
   padding: 0.75rem;
   overflow-y: auto;
   border-right: 1px solid var(--border-glass);
-  background: rgba(10, 14, 26, 0.5);
+  background: rgba(2, 6, 23, 0.5);
   flex-shrink: 0;
 }
 
