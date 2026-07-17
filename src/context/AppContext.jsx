@@ -396,13 +396,23 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
     ],
   };
 
-  results.medicine_info = {
+  results.medicine_info = isEmergency ? {
+    medicines: [
+      { name: 'Aspirin (150mg)', usage: 'Antiplatelet (blood thinner)', dosage: 'Chew 1-2 tablets immediately in case of cardiac chest pain', warning: 'Chew the tablet to speed up absorption. Do not swallow whole.' },
+      { name: 'Sorbitrate (5mg)', usage: 'Angina relief (vasodilator)', dosage: 'Place 1 tablet under the tongue (sublingual)', warning: 'Do not swallow. Do not take with Sildenafil/Tadalafil.' }
+    ],
+  } : {
     medicines: [
       { name: 'Paracetamol (500mg)', usage: 'Fever relief', dosage: '1 tablet every 6 hours as needed', sideEffects: ['Rare'], warning: 'Consult doctor if fever persists beyond 3 days' }
     ],
   };
 
-  results.followup = {
+  results.followup = isEmergency ? {
+    reminders: [
+      { action: 'Take emergency Aspirin (chewed) immediately', when: 'NOW', priority: 'high' },
+      { action: 'Avoid physical exertion and rest in comfortable sitting position', when: 'Continuous', priority: 'high' }
+    ],
+  } : {
     reminders: [
       { action: 'Check temperature', when: 'Every 4 hours', priority: 'high' }
     ],

@@ -42,17 +42,19 @@ export class FollowupAgent {
 
     // Symptom-specific reminders
     const symptomCategories = matchedSymptoms.map(s => s.category);
-    if (symptomCategories.includes('respiratory')) {
+    const isCardiacEmergency = symptomCategories.includes('cardiac') || urgency >= 4 || healthResult?.severity === 'critical';
+
+    if (symptomCategories.includes('respiratory') && !isCardiacEmergency) {
       reminders.push({ type: 'medication', message: 'Take prescribed respiratory medication', timing: 'As prescribed', priority: 'medium' });
       monitoringAdvice.push('Monitor breathing rate and oxygen levels if possible');
       monitoringAdvice.push('Track fever temperature twice daily');
     }
-    if (symptomCategories.includes('cardiac')) {
-      reminders.push({ type: 'medication', message: 'Take heart medication as prescribed', timing: 'Same time daily', priority: 'high' });
-      monitoringAdvice.push('Monitor blood pressure daily');
-      monitoringAdvice.push('Record any chest pain episodes with duration');
+    if (isCardiacEmergency) {
+      reminders.push({ type: 'emergency', message: 'Take emergency aspirin (chewed) if directed by 108 responder', timing: 'Immediately', priority: 'high' });
+      monitoringAdvice.push('Monitor blood pressure and pulse rate daily');
+      monitoringAdvice.push('Avoid physical exertion and rest in a comfortable position');
     }
-    if (symptomCategories.includes('digestive')) {
+    if (symptomCategories.includes('digestive') && !isCardiacEmergency) {
       reminders.push({ type: 'hydration', message: 'Drink ORS solution regularly', timing: 'Every 2 hours', priority: 'medium' });
       monitoringAdvice.push('Track fluid intake and output');
     }
@@ -81,7 +83,6 @@ export class FollowupAgent {
 
     // General monitoring
     if (monitoringAdvice.length === 0) {
-      monitoringAdvice.push('Track body temperature daily if fever present');
       monitoringAdvice.push('Note any new symptoms that develop');
       monitoringAdvice.push('Keep a record of food and water intake');
     }
