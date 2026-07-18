@@ -1,5 +1,5 @@
 .chat-page-container {
-  height: calc(100vh - 70px); /* header height */
+  height: calc(100vh - var(--header-height));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -115,7 +115,7 @@
   .chat-sidebar-col {
     position: fixed;
     left: 0;
-    top: 70px;
+    top: var(--header-height);
     bottom: 0;
     width: 280px;
     z-index: 100;
@@ -127,7 +127,7 @@
   }
   .mobile-overlay {
     position: fixed;
-    top: 70px;
+    top: var(--header-height);
     left: 0;
     right: 0;
     bottom: 0;
