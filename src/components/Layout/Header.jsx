@@ -22,6 +22,7 @@ export default function Header() {
   const { currentLanguage, setLanguage, isProcessing, logout, t } = useApp();
   const [langOpen, setLangOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const langRef = useRef(null);
   const location = useLocation();
 
@@ -35,94 +36,90 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const currentLangLabel = LANGUAGES.find(l => l.code === currentLanguage)?.label || 'English';
 
   return (
-    <header className="header">
-      <div className="header__inner">
+    <header className={`ll-header ${scrolled ? 'll-header--scrolled' : ''}`}>
+      <nav className="ll-header__nav">
         {/* Logo */}
-        <NavLink to="/" className="header__logo">
-          <div className="header__logo-text">
-            <span className="header__logo-title text-gradient">LifeLine AI</span>
-            <span className="header__logo-subtitle">Multi-Agent Healthcare Assistant</span>
-          </div>
+        <NavLink to="/" className="ll-header__logo">
+          <span className="ll-header__logo-text">
+            LifeLine <span className="ll-header__logo-accent">AI</span>
+          </span>
         </NavLink>
 
-        {/* Desktop Nav */}
-        <nav className="header__nav hide-mobile">
-          <NavLink to="/" end className={({ isActive }) => `header__nav-link ${isActive ? 'header__nav-link--active' : ''}`}>
-            <span className="header__nav-icon">🏠</span> {t('home')}
-          </NavLink>
-          <NavLink to="/chat" className={({ isActive }) => `header__nav-link ${isActive ? 'header__nav-link--active' : ''}`}>
-            <span className="header__nav-icon">💬</span> {t('chat')}
-          </NavLink>
-          <NavLink to="/dashboard" className={({ isActive }) => `header__nav-link ${isActive ? 'header__nav-link--active' : ''}`}>
-            <span className="header__nav-icon">📊</span> {t('dashboard')}
-          </NavLink>
-          <NavLink to="/schemes" className={({ isActive }) => `header__nav-link ${isActive ? 'header__nav-link--active' : ''}`}>
-            <span className="header__nav-icon">📋</span> {t('schemes')}
-          </NavLink>
-          <NavLink to="/history" className={({ isActive }) => `header__nav-link ${isActive ? 'header__nav-link--active' : ''}`}>
-            <span className="header__nav-icon">📋</span> {t('history')}
-          </NavLink>
-        </nav>
+        {/* Desktop Nav Links */}
+        <ul className="ll-header__links">
+          <li><NavLink to="/" end className={({isActive}) => `ll-header__link ${isActive ? 'll-header__link--active' : ''}`}>Home</NavLink></li>
+          <li><NavLink to="/chat" className={({isActive}) => `ll-header__link ${isActive ? 'll-header__link--active' : ''}`}>Chat</NavLink></li>
+          <li><NavLink to="/schemes" className={({isActive}) => `ll-header__link ${isActive ? 'll-header__link--active' : ''}`}>Schemes</NavLink></li>
+          <li><NavLink to="/history" className={({isActive}) => `ll-header__link ${isActive ? 'll-header__link--active' : ''}`}>History</NavLink></li>
+        </ul>
 
-        {/* Right side */}
-        <div className="header__actions">
-          {/* AI Active Indicator */}
-          <div className="header__status">
-            <span className={`header__status-dot ${isProcessing ? 'header__status-dot--active' : ''}`} />
-            <span className="header__status-text hide-mobile">{isProcessing ? 'Processing' : 'AI Active'}</span>
+        {/* Right Actions */}
+        <div className="ll-header__actions">
+          {/* AI Status */}
+          <div className="ll-header__status">
+            <span className={`ll-header__status-dot ${isProcessing ? 'll-header__status-dot--active' : ''}`} />
+            <span className="ll-header__status-label">{isProcessing ? 'Processing' : 'AI Active'}</span>
           </div>
 
           {/* Language Selector */}
-          <div className="header__lang" ref={langRef}>
-            <button className="header__lang-btn btn btn-ghost btn-sm" onClick={() => setLangOpen(!langOpen)}>
-              🌐 <span className="hide-mobile">{currentLangLabel}</span>
+          <div className="ll-header__lang" ref={langRef}>
+            <button className="ll-header__lang-btn" onClick={() => setLangOpen(!langOpen)}>
+              🌐 <span className="ll-header__lang-label">{currentLangLabel}</span>
               <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" style={{ transform: langOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
                 <path d="M1 3.5L5 7.5L9 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
               </svg>
             </button>
             {langOpen && (
-              <div className="header__lang-dropdown animate-slideDown">
+              <div className="ll-header__lang-dropdown">
                 {LANGUAGES.map(lang => (
                   <button
                     key={lang.code}
-                    className={`header__lang-option ${currentLanguage === lang.code ? 'header__lang-option--active' : ''}`}
+                    className={`ll-header__lang-option ${currentLanguage === lang.code ? 'll-header__lang-option--active' : ''}`}
                     onClick={() => { setLanguage(lang.code); setLangOpen(false); }}
                   >
                     {lang.label}
-                    {currentLanguage === lang.code && <span className="header__lang-check">✓</span>}
+                    {currentLanguage === lang.code && <span>✓</span>}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Logout Button */}
-          <button className="btn btn-ghost btn-sm" onClick={logout} title={t('logout')} style={{ marginLeft: '0.5rem' }}>
-            🚪 <span className="hide-mobile">{t('logout')}</span>
+          {/* Logout */}
+          <button className="ll-header__logout" onClick={logout}>
+            Logout
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+            </svg>
           </button>
 
           {/* Mobile Menu Toggle */}
-          <button className="header__hamburger hide-tablet" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            <span className={`header__hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
-            <span className={`header__hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
-            <span className={`header__hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+          <button className="ll-header__hamburger" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
+            <span className={`ll-header__hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+            <span className={`ll-header__hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+            <span className={`ll-header__hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
           </button>
         </div>
-      </div>
+      </nav>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <nav className="header__mobile-nav animate-slideDown">
-          <NavLink to="/" end className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>🏠 {t('home')}</NavLink>
-          <NavLink to="/chat" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>💬 {t('chat')}</NavLink>
-          <NavLink to="/dashboard" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>📊 {t('dashboard')}</NavLink>
-          <NavLink to="/schemes" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>📋 {t('schemes')}</NavLink>
-          <NavLink to="/history" className="header__mobile-link" onClick={() => setMobileMenuOpen(false)}>📋 {t('history')}</NavLink>
-          <button className="header__mobile-link" onClick={() => { logout(); setMobileMenuOpen(false); }} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textAlign: 'left', width: '100%', padding: 'inherit', font: 'inherit' }}>🚪 {t('logout')}</button>
-        </nav>
+        <div className="ll-header__mobile-menu">
+          <NavLink to="/" end className="ll-header__mobile-link" onClick={() => setMobileMenuOpen(false)}>Home</NavLink>
+          <NavLink to="/chat" className="ll-header__mobile-link" onClick={() => setMobileMenuOpen(false)}>Chat</NavLink>
+          <NavLink to="/schemes" className="ll-header__mobile-link" onClick={() => setMobileMenuOpen(false)}>Schemes</NavLink>
+          <NavLink to="/history" className="ll-header__mobile-link" onClick={() => setMobileMenuOpen(false)}>History</NavLink>
+          <button className="ll-header__mobile-link" onClick={() => { logout(); setMobileMenuOpen(false); }} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textAlign: 'left', width: '100%', padding: 'inherit', font: 'inherit' }}>Logout</button>
+        </div>
       )}
     </header>
   );

@@ -1,59 +1,20 @@
-.layout {
+/* ============================================
+   LifeLine AI – Layout
+   ============================================ */
+
+.ll-layout {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow-x: hidden;
+  background: #030712;
 }
 
-.layout__main {
+.ll-layout__main {
   flex: 1;
   display: flex;
   flex-direction: column;
   position: relative;
-  z-index: var(--z-base);
-}
-
-/* Animated gradient background orbs */
-.layout__bg {
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.layout__orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(100px);
-  opacity: 0.35;
-  transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.layout__orb--1 {
-  width: 550px;
-  height: 550px;
-  background: radial-gradient(circle, var(--theme-orb-1), transparent 70%);
-  top: -10%;
-  right: -5%;
-  animation: orbFloat1 25s ease-in-out infinite;
-}
-
-.layout__orb--2 {
-  width: 450px;
-  height: 450px;
-  background: radial-gradient(circle, var(--theme-orb-2), transparent 70%);
-  bottom: 10%;
-  left: -5%;
-  animation: orbFloat2 30s ease-in-out infinite;
-}
-
-.layout__orb--3 {
-  width: 350px;
-  height: 350px;
-  background: radial-gradient(circle, var(--theme-orb-3), transparent 70%);
-  top: 50%;
-  left: 40%;
-  animation: orbFloat1 20s ease-in-out infinite reverse;
+  z-index: 1;
 }
