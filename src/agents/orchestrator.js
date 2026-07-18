@@ -497,7 +497,7 @@ export class Orchestrator {
       conditions: healthResult.matchedSymptoms ? healthResult.matchedSymptoms.map(s => s.name) : []
     }).then(res => {
       const elapsed = Date.now() - schemeStart;
-      updateStatus('government_scheme', 'complete', schemeElapsed);
+      updateStatus('government_scheme', 'complete', elapsed);
       results.government_scheme = res;
       return res;
     });
@@ -511,7 +511,7 @@ export class Orchestrator {
       symptoms: healthResult.matchedSymptoms ? healthResult.matchedSymptoms.map(s => s.name) : []
     }).then(res => {
       const elapsed = Date.now() - medicineStart;
-      updateStatus('medicine_info', 'complete', medicineElapsed);
+      updateStatus('medicine_info', 'complete', elapsed);
       results.medicine_info = res;
       return res;
     });

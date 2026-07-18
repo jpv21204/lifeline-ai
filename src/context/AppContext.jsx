@@ -174,6 +174,25 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
   const lowerMsg = userMessage.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"");
   const isEmergency = /chest pain|difficulty breathing|unconscious|heart attack|stroke|bleeding|seizure|accident|not breathing|emergency/i.test(userMessage);
 
+  const targetLang = profile.language || 'en';
+  const translateText = async (text) => {
+    if (targetLang !== 'en') {
+      try {
+        const mod = await import('../agents/translationAgent.js');
+        const ta = new mod.TranslationAgent();
+        const translationResult = await ta.process({
+          text,
+          targetLanguage: targetLang
+        });
+        results.translation = translationResult;
+        return translationResult.translatedText || text;
+      } catch (err) {
+        console.warn("Simulator translation failed:", err);
+      }
+    }
+    return text;
+  };
+
   // Dynamic FAQ query checks
   const matchedFaq = CLINICAL_FAQ.find(item => 
     item.keywords.some(word => lowerMsg.includes(word))
@@ -182,13 +201,14 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
   if (matchedFaq) {
     const text = matchedFaq.response;
     results.general_info = { text };
+    const translatedSummary = await translateText(text);
     return {
       results,
       actionPlan: {
         urgency: 'low',
         urgencyLabel: 'Low',
         isEmergency: false,
-        summary: text,
+        summary: translatedSummary,
         sections: results
       }
     };
@@ -207,13 +227,14 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
   if (foundKeyword && (lowerMsg.startsWith('what is') || lowerMsg.startsWith('explain') || lowerMsg.includes('prevent') || lowerMsg.endsWith('?'))) {
     const text = mockKnowledge[foundKeyword];
     results.general_info = { text };
+    const translatedSummary = await translateText(text);
     return {
       results,
       actionPlan: {
         urgency: 'low',
         urgencyLabel: 'Low',
         isEmergency: false,
-        summary: text,
+        summary: translatedSummary,
         sections: results
       }
     };
@@ -286,7 +307,8 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
     results.analytics = { queryType: 'Hospital Search', responseConfidence: 0.95 };
 
     const summaryText = generateActionPlanMarkdown(results, profile, false, 'Low');
-    return { results, actionPlan: { urgency: 'low', urgencyLabel: 'Low', isEmergency: false, summary: summaryText, sections: results } };
+    const translatedSummary = await translateText(summaryText);
+    return { results, actionPlan: { urgency: 'low', urgencyLabel: 'Low', isEmergency: false, summary: translatedSummary, sections: results } };
   }
 
   if (isMedicineQuery && !isHospitalQuery && !isSchemeQuery) {
@@ -308,7 +330,8 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
     results.analytics = { queryType: 'Medicine Query', responseConfidence: 0.92 };
 
     const summaryText = generateActionPlanMarkdown(results, profile, false, 'Low');
-    return { results, actionPlan: { urgency: 'low', urgencyLabel: 'Low', isEmergency: false, summary: summaryText, sections: results } };
+    const translatedSummary = await translateText(summaryText);
+    return { results, actionPlan: { urgency: 'low', urgencyLabel: 'Low', isEmergency: false, summary: translatedSummary, sections: results } };
   }
 
   if (isSchemeQuery && !isHospitalQuery && !isMedicineQuery) {
@@ -330,7 +353,8 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
     results.analytics = { queryType: 'Scheme Matcher', responseConfidence: 0.94 };
 
     const summaryText = generateActionPlanMarkdown(results, profile, false, 'Low');
-    return { results, actionPlan: { urgency: 'low', urgencyLabel: 'Low', isEmergency: false, summary: summaryText, sections: results } };
+    const translatedSummary = await translateText(summaryText);
+    return { results, actionPlan: { urgency: 'low', urgencyLabel: 'Low', isEmergency: false, summary: translatedSummary, sections: results } };
   }
 
   // General conversational query fallback in simulation
@@ -338,13 +362,14 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
   if (isGeneralQuestion) {
     const summaryText = GENERAL_FALLBACK;
     results.general_info = { text: summaryText };
+    const translatedSummary = await translateText(summaryText);
     return {
       results,
       actionPlan: {
         urgency: 'low',
         urgencyLabel: 'Low',
         isEmergency: false,
-        summary: summaryText,
+        summary: translatedSummary,
         sections: results
       }
     };
@@ -414,23 +439,8 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
   results.translation = { language: profile.language || 'en', note: 'Translated.' };
   results.analytics = { queryType: 'Symptom Assessment', responseConfidence: 0.88 };
 
-  let summaryText = generateActionPlanMarkdown(results, profile, isEmergency, isEmergency ? 'Critical' : 'Low');
-
-  const targetLang = profile.language || 'en';
-  if (targetLang !== 'en') {
-    try {
-      const mod = await import('../agents/translationAgent.js');
-      const ta = new mod.TranslationAgent();
-      const translationResult = await ta.process({
-        text: summaryText,
-        targetLanguage: targetLang
-      });
-      summaryText = translationResult.translatedText || summaryText;
-      results.translation = translationResult;
-    } catch (err) {
-      console.warn("Simulator translation failed:", err);
-    }
-  }
+  const summaryText = generateActionPlanMarkdown(results, profile, isEmergency, isEmergency ? 'Critical' : 'Low');
+  const translatedSummary = await translateText(summaryText);
 
   return {
     results,
@@ -438,7 +448,7 @@ async function simulateOrchestrator(userMessage, profile, setAgentStatuses) {
       urgency: isEmergency ? 4 : 2,
       urgencyLabel: isEmergency ? 'Critical' : 'Low',
       isEmergency,
-      summary: summaryText,
+      summary: translatedSummary,
       sections: results
     }
   };
@@ -488,7 +498,7 @@ export function AppProvider({ children }) {
     } catch {}
     return false;
   });
-  const [currentLanguage, setCurrentLanguage] = useState('en');
+  const [currentLanguage, setCurrentLanguage] = useState(() => userProfile.language || 'en');
   const [isProcessing, setIsProcessing] = useState(false);
   const [themeContext, setThemeContext] = useState('neutral');
 
@@ -664,11 +674,34 @@ export function AppProvider({ children }) {
       localStorage.setItem('lifeline_auth', JSON.stringify({ isLoggedIn: true, ...authData }));
     } catch {}
     setIsAuthenticated(true);
+    setUserProfile(prev => {
+      const updated = {
+        ...prev,
+        name: authData.fullName || prev.name,
+      };
+      try { localStorage.setItem('lifeline_profile', JSON.stringify(updated)); } catch {}
+      return updated;
+    });
   }, []);
 
   const logout = useCallback(() => {
     setIsAuthenticated(false);
-    try { localStorage.removeItem('lifeline_auth'); } catch {}
+    try {
+      localStorage.removeItem('lifeline_auth');
+      localStorage.removeItem('lifeline_profile');
+    } catch {}
+    setUserProfile({
+      name: '',
+      age: '',
+      gender: '',
+      location: '',
+      state: 'Telangana',
+      language: 'en',
+      income: '',
+      occupation: '',
+      existingConditions: '',
+    });
+    setCurrentLanguage('en');
   }, []);
 
   const setLanguage = useCallback((lang) => {
