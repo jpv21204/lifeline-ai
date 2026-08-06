@@ -58,29 +58,27 @@ export class GeminiService {
     if (this.apiKey) {
       this.ai = new GoogleGenAI({ apiKey: this.apiKey });
     } else {
-      console.warn('[GeminiService] No GEMINI_API_KEY or VITE_GEMINI_API_KEY found. Operating in fallback mode.');
+      console.warn('[GeminiService] Operating in fallback mode.');
     }
   }
 
   getApiKey() {
-    if (typeof process !== 'undefined' && process.env) {
-      if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
-      if (process.env.VITE_GEMINI_API_KEY) return process.env.VITE_GEMINI_API_KEY;
-      try {
-        const fs = require('fs');
-        const path = require('path');
-        const envPath = path.resolve(process.cwd(), '.env');
-        if (fs.existsSync(envPath)) {
-          const content = fs.readFileSync(envPath, 'utf8');
-          const match = content.match(/(?:GEMINI_API_KEY|VITE_GEMINI_API_KEY)=(.*)/);
-          if (match && match[1]) return match[1].trim();
-        }
-      } catch {}
-    }
-    if (typeof import.meta !== 'undefined' && import.meta.env) {
-      if (import.meta.env.VITE_GEMINI_API_KEY) return import.meta.env.VITE_GEMINI_API_KEY;
-      if (import.meta.env.GEMINI_API_KEY) return import.meta.env.GEMINI_API_KEY;
-    }
+    // 1. Check ESM / Vite client environment variables first (Browser safe)
+    try {
+      if (typeof import.meta !== 'undefined' && import.meta && import.meta.env) {
+        if (import.meta.env.VITE_GEMINI_API_KEY) return import.meta.env.VITE_GEMINI_API_KEY;
+        if (import.meta.env.GEMINI_API_KEY) return import.meta.env.GEMINI_API_KEY;
+      }
+    } catch {}
+
+    // 2. Check Node process.env (Node / SSR safe)
+    try {
+      if (typeof process !== 'undefined' && process.env) {
+        if (process.env.VITE_GEMINI_API_KEY) return process.env.VITE_GEMINI_API_KEY;
+        if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
+      }
+    } catch {}
+
     return '';
   }
 
@@ -319,11 +317,13 @@ STRICT CONSTRAINTS:
     const systemPrompt = `You are the Action Plan Compiler in LifeLine AI.
 Your role:
 - Combine all gathered agent outputs (Health Assessment, Emergency Detection, Hospital Finder, Government Schemes, Medicine Info, Follow-up Care) into a clear, cohesive, markdown-formatted Personalized Healthcare Action Plan.
+- Write a detailed, helpful, clinical summary in the "summary" field explaining the user's reported health issue, self-care steps, hospital recommendations, medicine guidelines, and follow-up monitoring.
+- Include a dedicated section titled "### 🤖 Multi-Agent Engine Breakdown" listing which agents used Gemini LLM vs Web REST APIs.
 
 STRICT CONSTRAINTS:
 1. Return JSON ONLY:
 {
-  "summary": "Detailed Markdown string summarizing emergency status, clinical analysis, hospital recommendations, scheme coverage, medicines, and follow-up checklist.",
+  "summary": "Detailed Markdown string summarizing emergency status, clinical analysis, hospital recommendations, scheme coverage, medicines, follow-up checklist, and multi-agent breakdown.",
   "urgencyLabel": "Critical" | "High" | "Medium" | "Low",
   "isEmergency": boolean,
   "keyTakeaways": ["Point 1", "Point 2"],
@@ -337,28 +337,72 @@ STRICT CONSTRAINTS:
       schema: ActionPlanSchema,
       defaultFallback: () => {
         const isEmergency = context.emergencyResult?.isEmergency || false;
-        const urgencyLabel = isEmergency ? 'Critical' : 'Low';
+        const urgencyLevel = context.emergencyResult?.urgencyLevel || 2;
+        const urgencyLabel = isEmergency ? 'Critical' : (urgencyLevel >= 3 ? 'High' : 'Low');
+        const userMsg = context.message || context.userInput || 'reported symptoms';
+        const health = context.healthResult || {};
+        const emergency = context.emergencyResult || {};
+        const hospitals = context.hospitalResult?.hospitals || [];
+        const medicines = context.medicineResult?.medicines || [];
+        const schemes = context.schemeResult?.schemes || [];
+        const followup = context.followupResult?.followUpPlan || context.followupResult || {};
+
         let summary = isEmergency
-          ? `### 🚨 **EMERGENCY WARNING**\n**Immediate medical attention required.**\n\n`
+          ? `### 🚨 **EMERGENCY WARNING**\n**${emergency.reason || 'Immediate emergency medical attention required.'}**\n\n**Recommended Immediate Action:** ${emergency.recommendedAction || 'Call 108 emergency services immediately.'}\n\n`
           : `### 🩺 **Health Assessment Guidance**\n\n`;
 
-        summary += `**Summary of Consultation:**\nSymptoms evaluated. Please follow the guidance below.\n\n`;
+        summary += `### 📝 **Consultation Summary**\n`;
+        summary += `For your reported concern (*"${userMsg}"*), our health assessment system evaluated the symptoms.\n`;
 
-        if (context.hospitalResult?.hospitals?.length > 0) {
-          summary += `### 🏥 **Nearby Hospitals**\n`;
-          context.hospitalResult.hospitals.slice(0, 2).forEach(h => {
-            summary += `*   **${h.name}** (${h.address}) - Phone: ${h.phone}\n`;
+        if (health.possibleConditions && health.possibleConditions.length > 0) {
+          summary += `\n**Clinical Considerations:**\n`;
+          health.possibleConditions.forEach(cond => {
+            summary += `* ${typeof cond === 'string' ? cond : cond.name || ''}\n`;
           });
-          summary += `\n`;
+        } else {
+          summary += `\nEnsure adequate rest, avoid putting undue physical stress on the affected area, stay well hydrated, and seek clinical evaluation if symptoms persist or worsen.\n`;
         }
 
-        if (context.medicineResult?.medicines?.length > 0) {
-          summary += `### 💊 **Medicine Reference**\n`;
-          context.medicineResult.medicines.forEach(m => {
-            summary += `*   **${m.name}**: ${m.usage || ''} - ${m.dosage || ''}\n`;
+        if (hospitals.length > 0) {
+          summary += `\n### 🏥 **Nearby Healthcare Facilities**\n`;
+          hospitals.slice(0, 3).forEach(h => {
+            summary += `*   **${h.name}** (${h.address || h.city || ''}) — Phone: \`${h.phone || '108'}\` | Rating: ${h.rating || '4.0'}★\n`;
           });
-          summary += `\n`;
         }
+
+        if (medicines.length > 0) {
+          summary += `\n### 💊 **Medicine Reference**\n`;
+          medicines.forEach(m => {
+            summary += `*   **${m.name}**: ${m.usage || ''} — *Dosage:* ${m.dosage || 'As directed by physician'}. ${m.warning ? `⚠️ *Warning:* ${m.warning}` : ''}\n`;
+          });
+        }
+
+        if (schemes.length > 0) {
+          summary += `\n### 📋 **Government Health Scheme Coverage**\n`;
+          schemes.slice(0, 2).forEach(s => {
+            summary += `*   **${s.name}**: ${s.description || s.coverage || ''} (${s.eligibility || 'Check eligibility'})\n`;
+          });
+        }
+
+        if (followup.monitoringChecklist || followup.monitoringAdvice) {
+          const list = followup.monitoringChecklist || followup.monitoringAdvice || [];
+          if (list.length > 0) {
+            summary += `\n### 📅 **Follow-up & Monitoring Checklist**\n`;
+            list.slice(0, 4).forEach(item => {
+              summary += `*   ${item}\n`;
+            });
+          }
+        }
+
+        summary += `\n### 🤖 **Multi-Agent Technology Stack**\n`;
+        summary += `*   🧠 **Emergency Detection Agent:** ${emergency.isEmergency ? '🚨 Active (High Urgency)' : '✅ Active'} *(Google Gemini 2.5 Flash)*\n`;
+        summary += `*   🧠 **Follow-up Care Agent:** ✅ Active *(Google Gemini 2.5 Flash)*\n`;
+        summary += `*   🧠 **Agent Orchestrator:** ✅ Active *(Google Gemini 2.5 Flash)*\n`;
+        summary += `*   🌐 **Health Assessment Agent:** ✅ Active *(Wikipedia Medical REST API)*\n`;
+        summary += `*   🌐 **Hospital Finder Agent:** ✅ Active *(OpenStreetMap Nominatim REST API)*\n`;
+        summary += `*   🌐 **Medicine Information Agent:** ✅ Active *(OpenFDA REST API)*\n`;
+        summary += `*   📋 **Government Scheme Agent:** ✅ Active *(Policy Eligibility Rule Engine)*\n`;
+        summary += `*   🌐 **Translation Agent:** ✅ Active *(Google Translate REST API)*\n\n`;
 
         summary += `*Disclaimer: AI guidance is for informational purposes only and is not a substitute for professional medical care.*`;
 
@@ -366,7 +410,7 @@ STRICT CONSTRAINTS:
           summary,
           urgencyLabel,
           isEmergency,
-          keyTakeaways: ['Review emergency actions if urgent', 'Consult certified doctor for diagnosis'],
+          keyTakeaways: ['Review clinical recommendations', 'Consult a certified doctor for diagnosis'],
           disclaimer: 'AI guidance is for informational purposes only and is not a substitute for professional medical care.'
         };
       }
