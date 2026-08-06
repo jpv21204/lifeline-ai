@@ -1,4 +1,4 @@
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+import { geminiService } from '../services/gemini.service.js';
 
 export class MedicineAgent {
   constructor() {
@@ -7,13 +7,11 @@ export class MedicineAgent {
   }
 
   async process({ conditions = [], symptoms = [] }) {
-    await delay(300 + Math.random() * 300);
+    const terms = [...(conditions || []), ...(symptoms || [])].filter(Boolean);
+    const searchTerms = terms.length > 0 ? terms : ['general discomfort'];
+    const liveMedicines = [];
 
-    const terms = [...conditions, ...symptoms].filter(Boolean);
-    const searchTerms = terms.length > 0 ? terms : ['fever'];
-    const medicines = [];
-
-    // Purely Agentic: Query OpenFDA drug API in real-time
+    // Attempt OpenFDA drug API lookup for real-time FDA label metadata
     for (const term of searchTerms.slice(0, 2)) {
       try {
         const url = `https://api.fda.gov/drug/label.json?search=indications_and_usage:${encodeURIComponent(term)}&limit=1`;
@@ -23,34 +21,22 @@ export class MedicineAgent {
         if (data.results && data.results.length > 0) {
           const result = data.results[0];
           const openfda = result.openfda || {};
-          
           const genericName = openfda.generic_name ? openfda.generic_name[0] : null;
           const brandName = openfda.brand_name ? openfda.brand_name[0] : null;
           
           if (genericName || brandName) {
             const cleanName = (genericName || brandName).split(' ')[0].replace(/,/g, '');
-            const usageText = result.indications_and_usage 
-              ? result.indications_and_usage[0].slice(0, 150) + '...' 
-              : `Relief of ${term}`;
-            const dosageText = result.dosage_and_administration 
-              ? result.dosage_and_administration[0].slice(0, 150) + '...' 
-              : 'Consult physician for precise guidelines';
-            const warningText = result.warnings 
-              ? result.warnings[0].slice(0, 120) + '...' 
-              : 'Inform doctor of any history of allergies';
-            
-            medicines.push({
+            liveMedicines.push({
               id: cleanName.toLowerCase(),
               name: cleanName,
               genericName: cleanName,
               brandNames: openfda.brand_name ? openfda.brand_name.slice(0, 3) : [cleanName],
               category: 'Therapeutic Agent (FDA Registered)',
-              usage: usageText,
-              dosageInfo: dosageText,
-              warning: warningText,
+              usage: result.indications_and_usage ? result.indications_and_usage[0].slice(0, 150) + '...' : `Relief of ${term}`,
+              dosageInfo: result.dosage_and_administration ? result.dosage_and_administration[0].slice(0, 150) + '...' : 'Consult physician for precise guidelines',
+              warning: result.warnings ? result.warnings[0].slice(0, 120) + '...' : 'Inform doctor of any history of allergies',
               sideEffects: ['Dizziness', 'Allergic reaction (rare)'],
-              precautions: ['Consult a doctor before starting medication'],
-              price_range: '₹15 - ₹60'
+              precautions: ['Consult a doctor before starting medication']
             });
           }
         }
@@ -59,64 +45,48 @@ export class MedicineAgent {
       }
     }
 
-    // Dynamic fallback if live API fails or rates limit
-    if (medicines.length === 0) {
-      const fallbackMap = {
-        fever: { name: 'Paracetamol', usage: 'Fever and mild pain relief', dosage: '1 tablet every 6 hours', warning: 'Do not exceed 4g/day' },
-        pain: { name: 'Ibuprofen', usage: 'Inflammation and pain relief', dosage: 'Take with food every 6 hours', warning: 'Avoid with stomach ulcers' },
-        cough: { name: 'Dextromethorphan', usage: 'Cough suppressant', dosage: '10ml syrup three times daily', warning: 'May cause drowsiness' },
-        chest: { name: 'Aspirin', usage: 'Antiplatelet (blood thinner)', dosage: 'Chew 150-300mg immediately', warning: 'Chew to speed up absorption' },
-        heart: { name: 'Aspirin', usage: 'Antiplatelet (blood thinner)', dosage: 'Chew 150-300mg immediately', warning: 'Chew to speed up absorption' }
-      };
+    // Query Gemini LLM Reasoning for symptom-specific OTC medication guidance
+    const geminiResult = await geminiService.generateMedicineInfo({ conditions, symptoms: searchTerms });
+    const geminiMedicines = geminiResult.medicines || [];
 
-      searchTerms.forEach(term => {
-        const lower = term.toLowerCase();
-        const matched = Object.keys(fallbackMap).find(k => lower.includes(k));
-        if (matched) {
-          const m = fallbackMap[matched];
-          medicines.push({
-            id: m.name.toLowerCase(),
-            name: m.name,
-            genericName: m.name,
-            brandNames: [m.name],
-            category: 'Emergency OTC Recommendation',
-            usage: m.usage,
-            dosageInfo: m.dosage,
-            warning: m.warning,
-            sideEffects: ['Nausea'],
-            precautions: ['Consult physician'],
-            price_range: '₹5 - ₹20'
-          });
-        }
-      });
-    }
+    // Combine and deduplicate medicines
+    const combined = [...liveMedicines];
+    geminiMedicines.forEach(gm => {
+      const exists = combined.some(m => m.name.toLowerCase().includes(gm.name.toLowerCase()) || gm.name.toLowerCase().includes(m.name.toLowerCase()));
+      if (!exists) {
+        combined.push({
+          id: gm.name.toLowerCase().replace(/[^a-z0-9]/g, ''),
+          name: gm.name,
+          genericName: gm.name,
+          brandNames: [gm.name],
+          category: gm.category || 'Over-The-Counter Reference',
+          usage: gm.usage,
+          dosageInfo: gm.dosage,
+          warning: gm.warning,
+          sideEffects: gm.sideEffects || ['Mild discomfort'],
+          precautions: ['Consult physician']
+        });
+      }
+    });
 
-    // Default catch-all
-    if (medicines.length === 0) {
-      medicines.push({
-        id: 'paracetamol',
-        name: 'Paracetamol (500mg)',
-        genericName: 'Paracetamol',
-        brandNames: ['Crocin', 'Dolo 650'],
-        category: 'Analgesic',
-        usage: 'Fever and general pain relief',
-        dosageInfo: '1 tablet every 6 hours as needed',
-        warning: 'Consult doctor if symptoms persist beyond 3 days',
-        sideEffects: ['Rare'],
-        precautions: ['Do not overdose'],
-        price_range: '₹15 - ₹35'
-      });
-    }
+    const finalMedicines = combined.length > 0 ? combined : [{
+      id: 'ibuprofen',
+      name: 'Ibuprofen (400mg) / Diclofenac Topical Gel',
+      genericName: 'Ibuprofen / Diclofenac',
+      brandNames: ['Combiflam', 'Volini Gel'],
+      category: 'Anti-inflammatory / Pain Relief',
+      usage: 'Relief of joint pain, knee pain, and muscular inflammation',
+      dosageInfo: '1 tablet every 8 hours with meals or apply gel topically',
+      warning: 'Avoid taking oral NSAIDs on an empty stomach. Consult doctor if severe.',
+      sideEffects: ['Heartburn', 'Stomach irritation'],
+      precautions: ['Do not exceed recommended dose']
+    }];
 
     return {
-      medicines,
-      relevantMedicines: medicines,
-      disclaimer: '⚕️ Live agentic drug search completed. This information is for educational purposes. Consult a physician before starting any medicine.',
-      generalAdvice: [
-        'Always complete the full course of medicines',
-        'Store medicines in a cool, dry place',
-        'Check expiry date before consumption'
-      ]
+      medicines: finalMedicines,
+      relevantMedicines: finalMedicines,
+      disclaimer: geminiResult.disclaimer || '⚕️ Educational reference only. Consult a physician before taking any medicine.',
+      generalAdvice: geminiResult.generalAdvice || ['Consult a certified doctor for long-term pain management']
     };
   }
 }

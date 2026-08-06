@@ -32,6 +32,19 @@ export const FollowUpSchema = z.object({
   })
 });
 
+export const MedicineInfoSchema = z.object({
+  medicines: z.array(z.object({
+    name: z.string(),
+    usage: z.string(),
+    dosage: z.string().default('As directed by physician or on label'),
+    warning: z.string().default('Consult doctor before taking any medication'),
+    sideEffects: z.array(z.string()).default(['Mild nausea', 'Drowsiness']),
+    category: z.string().default('Over-The-Counter (OTC)')
+  })).default([]),
+  generalAdvice: z.array(z.string()).default(['Consult a qualified healthcare provider for proper diagnosis and prescription']),
+  disclaimer: z.string().default('Educational reference only. Do not take medicines without consulting a doctor.')
+});
+
 export const OrchestratorDecisionSchema = z.object({
   agentsToRun: z.array(z.string()),
   executionMode: z.enum(['parallel', 'sequential']).default('parallel'),
@@ -234,6 +247,74 @@ STRICT CONSTRAINTS:
           restAdvice: ['Rest in a well-ventilated room']
         }
       })
+    });
+  }
+
+  /**
+   * 2.5 Medicine Information Agent reasoning
+   */
+  async generateMedicineInfo(context) {
+    const systemPrompt = `You are the Medicine Information Agent in LifeLine AI.
+Your role:
+- Given the user's reported symptoms and health conditions, provide accurate, highly relevant Over-The-Counter (OTC) reference medications or topical treatments (e.g. for knee pain/joint pain: Ibuprofen 400mg, Diclofenac Gel, Pain relief patch; for fever: Paracetamol 500mg; for cough: Dextromethorphan syrup; for acid reflux: Omeprazole / Antacid gel).
+- Provide precise usage notes, adult dosage guidance, and critical warnings.
+- DO NOT invent non-existent drugs. Recommend real, standard OTC pharmaceutical options.
+
+STRICT CONSTRAINTS:
+1. Return JSON ONLY matching this structure:
+{
+  "medicines": [
+    {
+      "name": "Ibuprofen (400mg)",
+      "usage": "Inflammation and joint/knee pain relief",
+      "dosage": "1 tablet every 6 to 8 hours with meals",
+      "warning": "Avoid taking on an empty stomach. Do not use if you have history of gastric ulcers.",
+      "sideEffects": ["Mild stomach discomfort", "Heartburn"],
+      "category": "Anti-inflammatory / Pain Relief"
+    }
+  ],
+  "generalAdvice": ["Take medications as directed", "Consult physician for long-term pain"],
+  "disclaimer": "AI guidance is for informational reference only. Consult a doctor for prescription."
+}
+2. DO NOT suggest prescription-only controlled antibiotics without warning.
+3. NEVER duplicate identical medicines in the list.`;
+
+    return this.callGeminiWithRetry({
+      systemPrompt,
+      userPrompt: context,
+      schema: MedicineInfoSchema,
+      defaultFallback: () => {
+        const text = (context.symptoms || []).join(' ').toLowerCase() + (context.conditions || []).join(' ').toLowerCase();
+        let name = 'Paracetamol (500mg)';
+        let usage = 'Fever and mild pain relief';
+        let dosage = '1 tablet every 6 hours as needed';
+        let warning = 'Do not exceed 4g per day';
+
+        if (text.includes('knee') || text.includes('joint') || text.includes('arthritis') || text.includes('leg pain')) {
+          name = 'Ibuprofen (400mg) / Diclofenac Topical Gel';
+          usage = 'Joint inflammation and knee pain relief';
+          dosage = '1 tablet with food every 8 hours or apply gel topically 3-4 times daily';
+          warning = 'Avoid taking oral anti-inflammatories on an empty stomach';
+        } else if (text.includes('stomach') || text.includes('acid') || text.includes('gas')) {
+          name = 'Omeprazole (20mg) / Antacid Gel';
+          usage = 'Acid reflux and stomach gastritis relief';
+          dosage = '1 tablet before breakfast';
+          warning = 'Consult doctor if severe abdominal pain occurs';
+        }
+
+        return {
+          medicines: [{
+            name,
+            usage,
+            dosage,
+            warning,
+            sideEffects: ['Stomach upset', 'Dizziness'],
+            category: 'Over-The-Counter Reference'
+          }],
+          generalAdvice: ['Consult a doctor if pain persists beyond 3 days'],
+          disclaimer: 'AI guidance is for informational reference only. Consult a doctor for prescription.'
+        };
+      }
     });
   }
 
