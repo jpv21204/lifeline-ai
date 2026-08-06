@@ -66,6 +66,16 @@ export class GeminiService {
     if (typeof process !== 'undefined' && process.env) {
       if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
       if (process.env.VITE_GEMINI_API_KEY) return process.env.VITE_GEMINI_API_KEY;
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const envPath = path.resolve(process.cwd(), '.env');
+        if (fs.existsSync(envPath)) {
+          const content = fs.readFileSync(envPath, 'utf8');
+          const match = content.match(/(?:GEMINI_API_KEY|VITE_GEMINI_API_KEY)=(.*)/);
+          if (match && match[1]) return match[1].trim();
+        }
+      } catch {}
     }
     if (typeof import.meta !== 'undefined' && import.meta.env) {
       if (import.meta.env.VITE_GEMINI_API_KEY) return import.meta.env.VITE_GEMINI_API_KEY;
