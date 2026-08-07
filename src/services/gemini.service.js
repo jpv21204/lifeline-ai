@@ -235,35 +235,76 @@ export class GeminiService {
       systemPrompt,
       userPrompt: context,
       schema: FollowUpSchema,
-      defaultFallback: () => ({
-        followUpPlan: {
-          medicineSchedule: (context.medicines || []).map(m => ({
-            medicine: m.name || m.genericName || 'Prescribed Medicine',
-            dosage: m.dosage || 'As directed',
-            timing: 'Daily',
-            instructions: m.warning || 'Follow doctor guidance'
-          })),
-          monitoringChecklist: [
-            'Monitor temperature twice daily if feverish',
-            'Record any new or worsening symptoms',
-            'Check blood pressure and pulse if feeling dizzy'
-          ],
-          warningSigns: [
-            'Difficulty breathing or sudden chest discomfort',
-            'High fever persisting beyond 3 days',
-            'Extreme lethargy or confusion'
-          ],
-          nextVisit: context.urgency >= 4 ? 'Within 24-48 hours' : 'Within 3-5 days if symptoms persist',
-          lifestyleRecommendations: [
-            'Maintain adequate hydration (2.5 - 3 liters daily)',
-            'Ensure 7-8 hours of restful sleep',
-            'Avoid strenuous physical exertion'
-          ],
-          vaccinationReminders: [],
-          hydrationReminders: ['Sip fluids frequently throughout the day'],
-          restAdvice: ['Rest in a well-ventilated room']
+      defaultFallback: () => {
+        const text = ((context.symptoms || '') + ' ' + (context.message || '')).toLowerCase();
+        let checklist = [
+          'Record any new or worsening symptoms',
+          'Note changes in pain intensity throughout the day'
+        ];
+        let warnings = [
+          'High fever persisting beyond 3 days',
+          'Severe localized pain or numbness'
+        ];
+        let lifestyle = [
+          'Maintain adequate hydration (2.5 - 3 liters daily)',
+          'Ensure 7-8 hours of restful sleep'
+        ];
+
+        if (text.includes('back') || text.includes('spine')) {
+          checklist = [
+            'Track posture and lumbar spinal flexibility during movement',
+            'Observe if pain radiates down either leg or causes numbness/tingling',
+            'Record pain levels when sitting vs standing vs walking'
+          ];
+          warnings = [
+            'Loss of bowel or bladder control (seek emergency medical care immediately)',
+            'Sudden weakness or numbness in one or both legs',
+            'Severe unremitting back pain unmanaged by rest'
+          ];
+          lifestyle = [
+            'Maintain ergonomic spine support while sitting',
+            'Avoid heavy lifting, bending, or sudden twisting movements',
+            'Perform gentle short walks to prevent stiffness'
+          ];
+        } else if (text.includes('knee') || text.includes('joint')) {
+          checklist = [
+            'Observe joint swelling, redness, or warmth',
+            'Monitor weight-bearing tolerance when walking',
+            'Track morning joint stiffness duration'
+          ];
+          warnings = [
+            'Inability to bear any weight on the leg',
+            'Visible joint deformity or rapid severe swelling'
+          ];
+          lifestyle = [
+            'Apply ice/heat packs as needed',
+            'Avoid high-impact jumping or heavy knee flexing'
+          ];
+        } else if (text.includes('fever') || text.includes('temperature')) {
+          checklist = [
+            'Record body temperature twice daily with a thermometer',
+            'Monitor daily fluid intake (water, ORS, soups)'
+          ];
         }
-      })
+
+        return {
+          followUpPlan: {
+            medicineSchedule: (context.medicines || []).map(m => ({
+              medicine: m.name || m.genericName || 'Prescribed Medicine',
+              dosage: m.dosage || 'As directed',
+              timing: 'Daily',
+              instructions: m.warning || 'Follow doctor guidance'
+            })),
+            monitoringChecklist: checklist,
+            warningSigns: warnings,
+            nextVisit: context.urgency >= 4 ? 'Within 24-48 hours' : 'Within 3-5 days if symptoms persist',
+            lifestyleRecommendations: lifestyle,
+            vaccinationReminders: [],
+            hydrationReminders: ['Sip clean water regularly throughout the day'],
+            restAdvice: ['Rest in a comfortable, supportive position']
+          }
+        };
+      }
     });
   }
 
