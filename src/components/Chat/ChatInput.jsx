@@ -11,7 +11,11 @@ const LANG_LOCALES = {
 export default function ChatInput() {
   const { sendMessage, isProcessing, currentLanguage, t } = useApp();
   const [isListening, setIsListening] = useState(false);
+  const [value, setValue] = useState('');
+  const [attachedImage, setAttachedImage] = useState(null);
   const recognitionRef = useRef(null);
+  const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const startListening = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -61,8 +65,34 @@ export default function ChatInput() {
       startListening();
     }
   };
-  const [value, setValue] = useState('');
-  const textareaRef = useRef(null);
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG, JPEG, WEBP) of your prescription, lab report, or symptom.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      const base64Data = dataUrl.split(',')[1];
+      setAttachedImage({
+        fileName: file.name,
+        mimeType: file.type,
+        data: base64Data,
+        previewUrl: dataUrl
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearAttachedImage = () => {
+    setAttachedImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   /* Auto-resize textarea */
   useEffect(() => {
@@ -73,9 +103,11 @@ export default function ChatInput() {
   }, [value]);
 
   const handleSubmit = () => {
-    if (!value.trim() || isProcessing) return;
-    sendMessage(value);
+    if ((!value.trim() && !attachedImage) || isProcessing) return;
+    sendMessage(value, attachedImage);
     setValue('');
+    setAttachedImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
   };
 
@@ -88,12 +120,45 @@ export default function ChatInput() {
 
   return (
     <div className="chat-input">
+      {/* Attached Image Preview Bar */}
+      {attachedImage && (
+        <div className="chat-input__image-preview glass-panel animate-fadeIn" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', marginBottom: 8, borderRadius: 12, background: 'rgba(0, 212, 170, 0.1)', border: '1px solid rgba(0, 212, 170, 0.3)' }}>
+          <img src={attachedImage.previewUrl} alt="Prescription Upload" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6 }} />
+          <div style={{ flex: 1, fontSize: '0.85rem', color: '#f1f5f9' }}>
+            <div style={{ fontWeight: 600 }}>📷 {attachedImage.fileName}</div>
+            <div style={{ fontSize: '0.75rem', color: '#00d4aa' }}>Gemini Vision Multimodal Scanner Ready</div>
+          </div>
+          <button type="button" onClick={clearAttachedImage} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}>✕</button>
+        </div>
+      )}
+
       <div className="chat-input__wrapper glass-card">
+        {/* Hidden File Input for Prescription / Rash / Document Upload */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleFileSelect}
+        />
+
+        {/* Prescription / Image Upload Button */}
+        <button
+          type="button"
+          className="chat-input__mic btn btn-ghost btn-icon"
+          title="Upload Prescription, Lab Report or Rash Image (Gemini Vision)"
+          onClick={() => fileInputRef.current && fileInputRef.current.click()}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+          </svg>
+        </button>
+
         {/* Mic icon (functional speech input) */}
         <button 
           type="button"
           className={`chat-input__mic btn btn-ghost btn-icon ${isListening ? 'chat-input__mic--listening' : ''}`} 
-          title="Voice input" 
+          title="Voice input (Speak in Telugu, Hindi, Tamil or English)" 
           onClick={toggleListening}
           style={isListening ? { color: '#ef4444' } : {}}
         >
@@ -108,7 +173,7 @@ export default function ChatInput() {
         <textarea
           ref={textareaRef}
           className="chat-input__textarea"
-          placeholder={t('askSymptoms') + '...'}
+          placeholder={attachedImage ? "Add notes about this image or press send..." : t('askSymptoms') + '...'}
           rows={1}
           value={value}
           onChange={e => setValue(e.target.value)}
@@ -117,9 +182,9 @@ export default function ChatInput() {
         />
 
         <button
-          className={`chat-input__send btn btn-primary btn-icon--lg ${!value.trim() || isProcessing ? 'chat-input__send--disabled' : ''}`}
+          className={`chat-input__send btn btn-primary btn-icon--lg ${(!value.trim() && !attachedImage) || isProcessing ? 'chat-input__send--disabled' : ''}`}
           onClick={handleSubmit}
-          disabled={!value.trim() || isProcessing}
+          disabled={(!value.trim() && !attachedImage) || isProcessing}
           title="Send message"
         >
           {isProcessing ? (
@@ -132,7 +197,7 @@ export default function ChatInput() {
           )}
         </button>
       </div>
-      <p className="chat-input__hint">Press Enter to send · Shift+Enter for new line</p>
+      <p className="chat-input__hint">📷 Upload prescriptions / lab reports · 🎙️ Voice input supported · Press Enter to send</p>
     </div>
   );
 }

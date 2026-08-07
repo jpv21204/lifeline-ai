@@ -478,8 +478,7 @@ export function AppProvider({ children }) {
       state: 'Telangana',
       language: 'en',
       income: '',
-      occupation: '',
-      existingConditions: '',
+      occupation: ''
     };
   });
   const [medicalHistory, setMedicalHistory] = useState(() => {
@@ -543,13 +542,15 @@ export function AppProvider({ children }) {
     setAgentStatuses(fresh);
   }, []);
 
-  const sendMessage = useCallback(async (content) => {
-    if (!content.trim() || isProcessing) return;
+  const sendMessage = useCallback(async (content, attachedImage = null) => {
+    const textContent = (content || '').trim();
+    if ((!textContent && !attachedImage) || isProcessing) return;
 
     const userMsg = {
       id: generateId(),
       role: 'user',
-      content: content.trim(),
+      content: textContent || (attachedImage ? `[Medical Document/Image Uploaded: ${attachedImage.fileName}]` : ''),
+      image: attachedImage,
       timestamp: new Date().toISOString(),
     };
 
@@ -568,7 +569,7 @@ export function AppProvider({ children }) {
     ];
     const isGreeting = greetingWords.some(w => lowerContent === w || lowerContent.startsWith(w + ' '));
 
-    if (isGreeting) {
+    if (isGreeting && !attachedImage) {
       const greetingMsg = GREETING_RESPONSES[currentLanguage] || GREETING_RESPONSES['en'];
       await new Promise(r => setTimeout(r, 450));
       const elapsed = Math.round(performance.now() - start);
@@ -587,6 +588,11 @@ export function AppProvider({ children }) {
       return;
     }
 
+    const effectiveProfile = {
+      ...userProfile,
+      uploadedFiles: attachedImage ? [attachedImage, ...(userProfile.uploadedFiles || [])] : (userProfile.uploadedFiles || [])
+    };
+
     try {
       /* Try to import the real orchestrator; fall back to simulation */
       let orchestratorResult;
@@ -594,12 +600,13 @@ export function AppProvider({ children }) {
         const mod = await import('../agents/orchestrator.js');
         if (mod.Orchestrator) {
           const orc = new mod.Orchestrator();
-          orchestratorResult = await orc.process(content.trim(), userProfile, setAgentStatuses);
+          const queryText = textContent || 'Please analyze this uploaded medical prescription/document/image.';
+          orchestratorResult = await orc.process(queryText, effectiveProfile, setAgentStatuses);
         } else {
           throw new Error('No Orchestrator export');
         }
       } catch {
-        orchestratorResult = await simulateOrchestrator(content.trim(), userProfile, setAgentStatuses);
+        orchestratorResult = await simulateOrchestrator(textContent || 'Medical image upload', effectiveProfile, setAgentStatuses);
       }
 
       const elapsed = Math.round(performance.now() - start);

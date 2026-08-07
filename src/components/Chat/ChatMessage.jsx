@@ -70,6 +70,14 @@ export default function ChatMessage({ message }) {
 
       <div className="chat-message__body">
         <div className={`chat-message__bubble ${isUser ? '' : 'glass-card'}`}>
+          {/* User Image Attachment */}
+          {message.image && (
+            <div style={{ marginBottom: '0.6rem', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(0, 212, 170, 0.4)', background: 'rgba(0,0,0,0.3)', padding: 4 }}>
+              <img src={message.image.previewUrl || `data:${message.image.mimeType};base64,${message.image.data}`} alt="Prescription Upload" style={{ maxWidth: '100%', maxHeight: 220, display: 'block', borderRadius: 6, objectFit: 'contain' }} />
+              <div style={{ fontSize: '0.72rem', color: '#00d4aa', marginTop: 4, padding: '0 4px', fontWeight: 600 }}>📷 {message.image.fileName}</div>
+            </div>
+          )}
+
           {/* Main text with speaker action */}
           <div className="chat-message__text-wrapper">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', width: '100%' }}>

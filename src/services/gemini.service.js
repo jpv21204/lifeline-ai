@@ -121,11 +121,24 @@ export class GeminiService {
 
     const fullPrompt = `${systemPrompt}\n\nContext & Input:\n${typeof userPrompt === 'string' ? userPrompt : JSON.stringify(userPrompt, null, 2)}\n\nIMPORTANT: Return strict JSON only. Do not include markdown code block ticks unless raw JSON formatting. Never diagnose or prescribe.`;
 
+    const uploadedFiles = (userPrompt && typeof userPrompt === 'object') ? (userPrompt.uploadedFiles || userPrompt.userProfile?.uploadedFiles || []) : [];
+    const firstImage = uploadedFiles.find(f => f && f.data && f.mimeType);
+
+    const contentsPayload = firstImage ? [
+      {
+        inlineData: {
+          mimeType: firstImage.mimeType,
+          data: firstImage.data
+        }
+      },
+      fullPrompt
+    ] : fullPrompt;
+
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         const response = await this.ai.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: fullPrompt,
+          contents: contentsPayload,
           config: {
             temperature: 0.2,
             responseMimeType: 'application/json',
