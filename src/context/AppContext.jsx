@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import translationsData from '../data/translations.json';
+import { supabaseService } from '../services/supabase.service.js';
 
 const AppContext = createContext(null);
 
@@ -616,7 +617,7 @@ export function AppProvider({ children }) {
       setMessages(prev => [...prev, assistantMsg]);
       setConversationHistory(prev => [...prev, { role: 'assistant', content: assistantMsg.content }]);
 
-      /* Save consultation to medical history */
+      /* Save consultation to medical history (Supabase + LocalStorage) */
       const consultation = {
         id: assistantMsg.id,
         timestamp: assistantMsg.timestamp,
@@ -632,6 +633,7 @@ export function AppProvider({ children }) {
         try { localStorage.setItem('lifeline_medical_history', JSON.stringify(updated)); } catch {}
         return updated;
       });
+      supabaseService.saveConsultation(consultation, userProfile.email || userProfile.userId || 'guest');
 
       queryCountRef.current += 1;
       setAnalyticsData(prev => ({
@@ -660,6 +662,7 @@ export function AppProvider({ children }) {
     setUserProfile(prev => {
       const updated = { ...prev, ...updates };
       try { localStorage.setItem('lifeline_profile', JSON.stringify(updated)); } catch {}
+      supabaseService.saveUserProfile(updated);
       return updated;
     });
   }, []);
@@ -667,25 +670,41 @@ export function AppProvider({ children }) {
   const clearMedicalHistory = useCallback(() => {
     setMedicalHistory([]);
     try { localStorage.removeItem('lifeline_medical_history'); } catch {}
-  }, []);
+    supabaseService.clearMedicalHistory(userProfile.email || userProfile.userId || 'guest');
+  }, [userProfile]);
 
   const login = useCallback((authData) => {
     try {
       localStorage.setItem('lifeline_auth', JSON.stringify({ isLoggedIn: true, ...authData }));
     } catch {}
     setIsAuthenticated(true);
+
+    const userId = authData.email || authData.userId || authData.id;
     setUserProfile(prev => {
       const updated = {
         ...prev,
         name: authData.fullName || prev.name,
+        email: authData.email || prev.email,
+        userId: userId || prev.userId
       };
       try { localStorage.setItem('lifeline_profile', JSON.stringify(updated)); } catch {}
+      supabaseService.saveUserProfile(updated);
       return updated;
     });
+
+    if (userId) {
+      supabaseService.fetchMedicalHistory(userId).then(history => {
+        if (history && history.length > 0) setMedicalHistory(history);
+      });
+      supabaseService.fetchUserProfile(userId).then(prof => {
+        if (prof) setUserProfile(prev => ({ ...prev, ...prof }));
+      });
+    }
   }, []);
 
   const logout = useCallback(() => {
     setIsAuthenticated(false);
+    supabaseService.signOut();
     try {
       localStorage.removeItem('lifeline_auth');
       localStorage.removeItem('lifeline_profile');

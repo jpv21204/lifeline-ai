@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { supabaseService } from '../services/supabase.service';
 import './AuthPage.css';
 
 export default function AuthPage() {
@@ -25,13 +26,12 @@ export default function AuthPage() {
     setForm({ fullName: '', email: '', phone: '', password: '' });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
     if (mode === 'signup') {
-      // Validate required fields
       if (!form.fullName.trim() || !form.email.trim() || !form.password.trim()) {
         setError('Please fill in all required fields.');
         return;
@@ -41,7 +41,33 @@ export default function AuthPage() {
         return;
       }
 
-      // Save user data to localStorage
+      if (supabaseService.isConfigured) {
+        const { user, error: supErr } = await supabaseService.signUp({
+          email: form.email.trim().toLowerCase(),
+          password: form.password,
+          fullName: form.fullName.trim(),
+          phone: form.phone.trim()
+        });
+
+        if (supErr) {
+          setError(supErr.message || 'Supabase Auth registration failed.');
+          return;
+        }
+
+        login({
+          userId: user?.id,
+          fullName: form.fullName.trim(),
+          email: form.email.trim().toLowerCase(),
+          phone: form.phone.trim(),
+          createdAt: new Date().toISOString()
+        });
+
+        setSuccess('Account created in Supabase! Redirecting...');
+        setTimeout(() => navigate('/'), 1000);
+        return;
+      }
+
+      // LocalStorage Fallback
       const userData = {
         fullName: form.fullName.trim(),
         email: form.email.trim().toLowerCase(),
@@ -50,7 +76,6 @@ export default function AuthPage() {
         createdAt: new Date().toISOString(),
       };
 
-      // Check if user already exists
       const existingUsers = JSON.parse(localStorage.getItem('lifeline_user') || '[]');
       const userExists = Array.isArray(existingUsers)
         ? existingUsers.some((u) => u.email === userData.email)
@@ -61,12 +86,10 @@ export default function AuthPage() {
         return;
       }
 
-      // Store as array of users
       const users = Array.isArray(existingUsers) ? existingUsers : existingUsers.email ? [existingUsers] : [];
       users.push(userData);
       localStorage.setItem('lifeline_user', JSON.stringify(users));
 
-      // Auto-login after signup
       login({
         fullName: userData.fullName,
         email: userData.email,
@@ -83,6 +106,31 @@ export default function AuthPage() {
         return;
       }
 
+      if (supabaseService.isConfigured) {
+        const { user, error: supErr } = await supabaseService.signIn({
+          email: form.email.trim().toLowerCase(),
+          password: form.password
+        });
+
+        if (supErr) {
+          setError(supErr.message || 'Invalid email or password.');
+          return;
+        }
+
+        login({
+          userId: user?.id,
+          fullName: user?.user_metadata?.full_name || form.email.split('@')[0],
+          email: form.email.trim().toLowerCase(),
+          phone: user?.user_metadata?.phone || '',
+          createdAt: user?.created_at || new Date().toISOString()
+        });
+
+        setSuccess('Supabase Auth login successful! Redirecting...');
+        setTimeout(() => navigate('/'), 1000);
+        return;
+      }
+
+      // LocalStorage Fallback
       const storedUsers = JSON.parse(localStorage.getItem('lifeline_user') || '[]');
       const users = Array.isArray(storedUsers) ? storedUsers : storedUsers.email ? [storedUsers] : [];
       const matchedUser = users.find(
