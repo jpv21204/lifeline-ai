@@ -5,6 +5,21 @@ import { z } from 'zod';
 // Zod Validation Schemas
 // ==========================================
 
+export const HealthAssessmentSchema = z.object({
+  matchedSymptoms: z.array(z.object({
+    name: z.string(),
+    category: z.string().default('general')
+  })).default([]),
+  possibleConditions: z.array(z.string()).default([]),
+  urgency: z.number().min(1).max(5).default(2),
+  urgencyLabel: z.string().default('Medium'),
+  recommendedCareLevel: z.string().default('visit-doctor'),
+  specialtiesNeeded: z.array(z.string()).default(['General Medicine']),
+  selfCareAdvice: z.array(z.string()).default([]),
+  seekCareIf: z.array(z.string()).default([]),
+  followUpQuestions: z.array(z.string()).default([])
+});
+
 export const EmergencySchema = z.object({
   urgencyLevel: z.number().min(1).max(5),
   isEmergency: z.boolean(),
@@ -136,6 +151,87 @@ export class GeminiService {
     }
 
     return defaultFallback();
+  }
+
+  /**
+   * 0.5 Health Assessment Agent reasoning
+   */
+  async generateHealthAssessment(context) {
+    const systemPrompt = `You are the Health Assessment Agent in LifeLine AI.
+Your role:
+- Analyze the user's reported symptoms and health complaints (e.g. back pain, knee pain, fever, cough, stomach pain, dizziness, skin rash, etc.).
+- Understand the user's input deeply instead of falling back to default topics.
+- Provide a clear, educational clinical overview explaining possible causes (e.g. for back pain: muscle strain, lumbar disc irritation, posture fatigue).
+- Determine urgency level (1 to 5), recommended care level (self-care, visit-doctor, urgent-care, emergency), and required medical specialty (e.g. Orthopedics, Pulmonology, Gastroenterology, Neurology).
+- Provide tailored self-care guidance, warning signs (when to seek emergency care), and follow-up questions.
+
+STRICT CONSTRAINTS:
+1. Return JSON ONLY matching this structure:
+{
+  "matchedSymptoms": [
+    { "name": "Back Pain", "category": "musculoskeletal" }
+  ],
+  "possibleConditions": [
+    "Back pain is commonly caused by muscle or ligament strain, improper posture, heavy lifting, or spinal disc irritation. Most acute back pain improves with gentle activity, ice/heat application, and proper ergonomic support."
+  ],
+  "urgency": 2,
+  "urgencyLabel": "Low",
+  "recommendedCareLevel": "visit-doctor",
+  "specialtiesNeeded": ["Orthopedics", "Physical Therapy", "General Medicine"],
+  "selfCareAdvice": [
+    "Apply cold compresses for acute pain (first 48 hours), then switch to warm heat packs.",
+    "Maintain gentle movement and walking; avoid prolonged bed rest.",
+    "Practice good posture and avoid heavy lifting or sudden bending."
+  ],
+  "seekCareIf": [
+    "Pain radiates down the leg below the knee with numbness or tingling",
+    "Back pain is accompanied by loss of bowel or bladder control (emergency)",
+    "Severe unrelenting pain unmanaged by rest"
+  ],
+  "followUpQuestions": [
+    "Did the pain start after an injury or heavy lifting?",
+    "Does the pain radiate into your legs or feet?"
+  ]
+}
+2. NEVER give a definitive medical diagnosis. Emphasize educational guidance.`;
+
+    return this.callGeminiWithRetry({
+      systemPrompt,
+      userPrompt: context,
+      schema: HealthAssessmentSchema,
+      defaultFallback: () => {
+        const text = (context.symptoms || '').toLowerCase();
+        let topic = 'General Discomfort';
+        let overview = 'A health consultation is recommended to evaluate symptoms.';
+        let spec = 'General Medicine';
+
+        if (text.includes('back') || text.includes('spine')) {
+          topic = 'Back Pain';
+          overview = 'Back pain commonly stems from muscle strain, ligament sprains, or posture stress. Gentle mobilization, ergonomic support, and heat/ice therapy help relieve acute discomfort.';
+          spec = 'Orthopedics';
+        } else if (text.includes('knee') || text.includes('joint')) {
+          topic = 'Joint / Knee Pain';
+          overview = 'Knee and joint pain can result from ligament strain, overuse, or joint inflammation. Rest, elevation, and gentle cold/warm compress therapy aid recovery.';
+          spec = 'Orthopedics';
+        } else if (text.includes('chest')) {
+          topic = 'Chest Pain';
+          overview = 'Chest pain requires immediate clinical assessment to rule out cardiac or pulmonary conditions.';
+          spec = 'Cardiology';
+        }
+
+        return {
+          matchedSymptoms: [{ name: topic, category: 'general' }],
+          possibleConditions: [overview],
+          urgency: text.includes('chest') ? 5 : 2,
+          urgencyLabel: text.includes('chest') ? 'Critical' : 'Low',
+          recommendedCareLevel: text.includes('chest') ? 'emergency' : 'visit-doctor',
+          specialtiesNeeded: [spec],
+          selfCareAdvice: ['Ensure adequate rest', 'Stay hydrated', 'Avoid physical strain'],
+          seekCareIf: ['Symptoms worsen progressively', 'Severe new pain develops'],
+          followUpQuestions: ['How long have you experienced these symptoms?']
+        };
+      }
+    });
   }
 
   /**
