@@ -471,7 +471,7 @@ export class GeminiService {
         const ranHospital = agentsRun.length === 0 || agentsRun.some(a => a.toLowerCase().includes('hospital'));
         if (ranHospital && hospitals.length > 0) {
           summary += `### 🏥 **Nearby Healthcare Facilities**\n`;
-          hospitals.slice(0, 4).forEach(h => {
+          hospitals.slice(0, 8).forEach(h => {
             summary += `*   **${h.name}** (${h.address || h.city || ''}) — Phone: \`${h.phone || '108'}\` | Rating: ${h.rating || '4.0'}★\n`;
           });
           summary += `\n`;
