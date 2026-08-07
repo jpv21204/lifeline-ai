@@ -325,28 +325,29 @@ STRICT CONSTRAINTS:
     const systemPrompt = `You are the Intelligent Agent Orchestrator in LifeLine AI.
 Your role:
 - Inspect user input, uploaded files/prescriptions, image analysis, medicine data, and emergency indicators.
-- Decide which agents MUST execute to fulfill the request efficiently.
-Available Agent Identifiers:
-  - "EmergencyAgent" (or "emergency_detection")
-  - "HealthAssessmentAgent" (or "health_assessment")
-  - "HospitalFinderAgent" (or "hospital_finder")
-  - "MedicineAgent" (or "medicine_info")
-  - "GovernmentSchemeAgent" (or "government_scheme")
-  - "FollowupAgent" (or "followup")
-  - "TranslationAgent" (or "translation")
+- Decide which agents MUST execute to fulfill the request efficiently. DO NOT run unnecessary agents.
 
-Rules for Routing:
-- If user uploads ONLY a prescription or asks only about a medicine: run MedicineAgent, FollowupAgent, TranslationAgent (DO NOT run HospitalFinder, GovernmentScheme, EmergencyAgent unless chest pain/emergency is indicated).
-- If user reports chest pain / emergency: run EmergencyAgent, HospitalFinderAgent, FollowupAgent, TranslationAgent.
-- If user asks general health/symptom query: run HealthAssessmentAgent, EmergencyAgent, HospitalFinderAgent, GovernmentSchemeAgent, MedicineAgent, FollowupAgent, TranslationAgent.
+Available Agent Identifiers:
+  - "EmergencyAgent"
+  - "HealthAssessmentAgent"
+  - "HospitalFinderAgent"
+  - "MedicineAgent"
+  - "GovernmentSchemeAgent"
+  - "FollowupAgent"
+  - "TranslationAgent"
+
+Routing Rules:
+- If user asks ONLY for hospitals / clinics / healthcare facilities (e.g. "i want some other hospitals", "find hospitals near me", "show hospitals", "other hospitals"): run ONLY ["HospitalFinderAgent", "TranslationAgent"]. (DO NOT run HealthAssessmentAgent, EmergencyAgent, MedicineAgent, GovernmentSchemeAgent, FollowupAgent).
+- If user asks ONLY about a medicine or uploads a prescription: run ONLY ["MedicineAgent", "FollowupAgent", "TranslationAgent"].
+- If user reports chest pain / life-threatening emergency: run ["EmergencyAgent", "HospitalFinderAgent", "FollowupAgent", "TranslationAgent"].
+- If user inputs a new symptom or general health inquiry: run ["HealthAssessmentAgent", "EmergencyAgent", "HospitalFinderAgent", "GovernmentSchemeAgent", "MedicineAgent", "FollowupAgent", "TranslationAgent"].
 
 STRICT CONSTRAINTS:
 1. Return JSON ONLY matching this structure:
 {
-  "agentsToRun": ["EmergencyAgent", "HospitalFinderAgent", "FollowupAgent", "TranslationAgent"],
+  "agentsToRun": ["HospitalFinderAgent", "TranslationAgent"],
   "executionMode": "parallel",
-  "reasoning": "Clear short explanation of agent routing decision",
-  "additionalClarificationNeeded": false
+  "reasoning": "User requested hospital listings only."
 }`;
 
     return this.callGeminiWithRetry({
@@ -355,8 +356,17 @@ STRICT CONSTRAINTS:
       schema: OrchestratorDecisionSchema,
       defaultFallback: () => {
         const text = (context.userInput || '').toLowerCase();
+        const isHospOnly = /hospital|hospitals|clinic|clinics|doctor|doctors|other hospitals/i.test(text) && !/fever|cough|chest pain|pain|headache|bleed|fracture|dizzy/i.test(text);
         const isMedOnly = /prescription|tablet|medicine|dosage|drug/i.test(text) && !/chest pain|hospital|fever|cough|emergency/i.test(text);
         const isEmergencyOnly = /chest pain|heart attack|stroke|not breathing/i.test(text);
+
+        if (isHospOnly) {
+          return {
+            agentsToRun: ['HospitalFinderAgent', 'TranslationAgent'],
+            executionMode: 'parallel',
+            reasoning: 'User requested hospital listings only.'
+          };
+        }
 
         if (isMedOnly) {
           return {
@@ -397,14 +407,15 @@ STRICT CONSTRAINTS:
   async generateActionPlan(context) {
     const systemPrompt = `You are the Action Plan Compiler in LifeLine AI.
 Your role:
-- Combine all gathered agent outputs (Health Assessment, Emergency Detection, Hospital Finder, Government Schemes, Medicine Info, Follow-up Care) into a clear, cohesive, markdown-formatted Personalized Healthcare Action Plan.
-- Write a detailed, helpful, clinical summary in the "summary" field explaining the user's reported health issue, self-care steps, hospital recommendations, medicine guidelines, and follow-up monitoring.
-- Include a dedicated section titled "### 🤖 Multi-Agent Engine Breakdown" listing which agents used Gemini LLM vs Web REST APIs.
+- Combine all gathered agent outputs into a clear, cohesive, markdown-formatted Personalized Healthcare Action Plan.
+- ONLY include sections for agents that were actually selected to run by the Orchestrator.
+- If the user ONLY requested hospitals, DO NOT output a Health Consultation Summary or Clinical Considerations. Directly output the Hospital listings.
+- Include a dedicated section titled "### 🤖 Multi-Agent Engine Breakdown" listing which agents executed and whether they used Gemini LLM vs Web REST APIs.
 
 STRICT CONSTRAINTS:
 1. Return JSON ONLY:
 {
-  "summary": "Detailed Markdown string summarizing emergency status, clinical analysis, hospital recommendations, scheme coverage, medicines, follow-up checklist, and multi-agent breakdown.",
+  "summary": "Detailed Markdown string summarizing only the executed agent outputs.",
   "urgencyLabel": "Critical" | "High" | "Medium" | "Low",
   "isEmergency": boolean,
   "keyTakeaways": ["Point 1", "Point 2"],
@@ -420,78 +431,94 @@ STRICT CONSTRAINTS:
         const isEmergency = context.emergencyResult?.isEmergency || false;
         const urgencyLevel = context.emergencyResult?.urgencyLevel || 2;
         const urgencyLabel = isEmergency ? 'Critical' : (urgencyLevel >= 3 ? 'High' : 'Low');
-        const userMsg = context.message || context.userInput || 'reported symptoms';
+        const userMsg = context.message || context.userInput || 'query';
         const health = context.healthResult || {};
         const emergency = context.emergencyResult || {};
         const hospitals = context.hospitalResult?.hospitals || [];
         const medicines = context.medicineResult?.medicines || [];
         const schemes = context.schemeResult?.schemes || [];
         const followup = context.followupResult?.followUpPlan || context.followupResult || {};
+        const agentsRun = context.orchestratorDecision?.agentsToRun || [];
 
-        let summary = isEmergency
-          ? `### 🚨 **EMERGENCY WARNING**\n**${emergency.reason || 'Immediate emergency medical attention required.'}**\n\n**Recommended Immediate Action:** ${emergency.recommendedAction || 'Call 108 emergency services immediately.'}\n\n`
-          : `### 🩺 **Health Assessment Guidance**\n\n`;
+        let summary = '';
 
-        summary += `### 📝 **Consultation Summary**\n`;
-        summary += `For your reported concern (*"${userMsg}"*), our health assessment system evaluated the symptoms.\n`;
-
-        if (health.possibleConditions && health.possibleConditions.length > 0) {
-          summary += `\n**Clinical Considerations:**\n`;
-          health.possibleConditions.forEach(cond => {
-            summary += `* ${typeof cond === 'string' ? cond : cond.name || ''}\n`;
-          });
-        } else {
-          summary += `\nEnsure adequate rest, avoid putting undue physical stress on the affected area, stay well hydrated, and seek clinical evaluation if symptoms persist or worsen.\n`;
+        if (isEmergency) {
+          summary += `### 🚨 **EMERGENCY WARNING**\n**${emergency.reason || 'Immediate emergency medical attention required.'}**\n\n**Recommended Immediate Action:** ${emergency.recommendedAction || 'Call 108 emergency services immediately.'}\n\n`;
         }
 
-        if (hospitals.length > 0) {
-          summary += `\n### 🏥 **Nearby Healthcare Facilities**\n`;
-          hospitals.slice(0, 3).forEach(h => {
+        // Only include Health Consultation Summary if Health Assessment Agent was actually run and has results
+        const ranHealth = agentsRun.some(a => a.toLowerCase().includes('health'));
+        if (ranHealth && (health.matchedSymptoms?.length > 0 || health.possibleConditions?.length > 0)) {
+          summary += `### 🩺 **Health Assessment Guidance**\n\n`;
+          summary += `### 📝 **Consultation Summary**\n`;
+          summary += `For your reported concern (*"${userMsg}"*), our health assessment system evaluated the symptoms.\n\n`;
+          summary += `**Clinical Considerations:**\n`;
+          (health.possibleConditions || []).forEach(cond => {
+            summary += `*   ${typeof cond === 'string' ? cond : cond.name || ''}\n`;
+          });
+          summary += `\n`;
+        }
+
+        // Include Hospitals if Hospital Finder Agent ran
+        const ranHospital = agentsRun.length === 0 || agentsRun.some(a => a.toLowerCase().includes('hospital'));
+        if (ranHospital && hospitals.length > 0) {
+          summary += `### 🏥 **Nearby Healthcare Facilities**\n`;
+          hospitals.slice(0, 4).forEach(h => {
             summary += `*   **${h.name}** (${h.address || h.city || ''}) — Phone: \`${h.phone || '108'}\` | Rating: ${h.rating || '4.0'}★\n`;
           });
+          summary += `\n`;
         }
 
-        if (medicines.length > 0) {
-          summary += `\n### 💊 **Medicine Reference**\n`;
+        // Include Medicines if Medicine Agent ran
+        const ranMedicine = agentsRun.some(a => a.toLowerCase().includes('medicine'));
+        if (ranMedicine && medicines.length > 0) {
+          summary += `### 💊 **Medicine Reference**\n`;
           medicines.forEach(m => {
             summary += `*   **${m.name}**: ${m.usage || ''} — *Dosage:* ${m.dosage || 'As directed by physician'}. ${m.warning ? `⚠️ *Warning:* ${m.warning}` : ''}\n`;
           });
+          summary += `\n`;
         }
 
-        if (schemes.length > 0) {
-          summary += `\n### 📋 **Government Health Scheme Coverage**\n`;
+        // Include Schemes if Scheme Agent ran
+        const ranScheme = agentsRun.some(a => a.toLowerCase().includes('scheme'));
+        if (ranScheme && schemes.length > 0) {
+          summary += `### 📋 **Government Health Scheme Coverage**\n`;
           schemes.slice(0, 2).forEach(s => {
             summary += `*   **${s.name}**: ${s.description || s.coverage || ''} (${s.eligibility || 'Check eligibility'})\n`;
           });
+          summary += `\n`;
         }
 
-        if (followup.monitoringChecklist || followup.monitoringAdvice) {
+        // Include Follow-up if Follow-up Agent ran
+        const ranFollowup = agentsRun.some(a => a.toLowerCase().includes('followup'));
+        if (ranFollowup && (followup.monitoringChecklist || followup.monitoringAdvice)) {
           const list = followup.monitoringChecklist || followup.monitoringAdvice || [];
           if (list.length > 0) {
-            summary += `\n### 📅 **Follow-up & Monitoring Checklist**\n`;
+            summary += `### 📅 **Follow-up & Monitoring Checklist**\n`;
             list.slice(0, 4).forEach(item => {
               summary += `*   ${item}\n`;
             });
+            summary += `\n`;
           }
         }
 
-        summary += `\n### 🤖 **Multi-Agent Technology Stack**\n`;
-        summary += `*   🧠 **Emergency Detection Agent:** ${emergency.isEmergency ? '🚨 Active (High Urgency)' : '✅ Active'} *(Google Gemini 2.5 Flash)*\n`;
-        summary += `*   🧠 **Follow-up Care Agent:** ✅ Active *(Google Gemini 2.5 Flash)*\n`;
-        summary += `*   🧠 **Agent Orchestrator:** ✅ Active *(Google Gemini 2.5 Flash)*\n`;
-        summary += `*   🌐 **Health Assessment Agent:** ✅ Active *(Wikipedia Medical REST API)*\n`;
-        summary += `*   🌐 **Hospital Finder Agent:** ✅ Active *(OpenStreetMap Nominatim REST API)*\n`;
-        summary += `*   🌐 **Medicine Information Agent:** ✅ Active *(OpenFDA REST API)*\n`;
-        summary += `*   📋 **Government Scheme Agent:** ✅ Active *(Policy Eligibility Rule Engine)*\n`;
-        summary += `*   🌐 **Translation Agent:** ✅ Active *(Google Translate REST API)*\n\n`;
-
-        summary += `*Disclaimer: AI guidance is for informational purposes only and is not a substitute for professional medical care.*`;
+        summary += `### 🤖 **Multi-Agent Engine Breakdown**\n`;
+        if (agentsRun.length > 0) {
+          agentsRun.forEach(a => {
+            const isLLM = a.includes('Emergency') || a.includes('Followup') || a.includes('Medicine') || a.includes('Orchestrator');
+            summary += `*   **${a}:** ✅ Executed *(${isLLM ? 'Google Gemini 2.5 Flash' : 'Web REST API / Rule Engine'})*\n`;
+          });
+        } else {
+          summary += `*   **HospitalFinderAgent:** ✅ Executed *(OpenStreetMap Nominatim REST API)*\n`;
+          summary += `*   **AgentOrchestrator:** ✅ Executed *(Google Gemini 2.5 Flash)*\n`;
+        }
+        summary += `\n*Disclaimer: AI guidance is for informational purposes only and is not a substitute for professional medical care.*`;
 
         return {
           summary,
           urgencyLabel,
           isEmergency,
-          keyTakeaways: ['Review clinical recommendations', 'Consult a certified doctor for diagnosis'],
+          keyTakeaways: ['Review recommendations', 'Consult certified doctor for diagnosis'],
           disclaimer: 'AI guidance is for informational purposes only and is not a substitute for professional medical care.'
         };
       }

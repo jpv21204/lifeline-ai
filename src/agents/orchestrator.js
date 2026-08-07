@@ -133,8 +133,8 @@ export class Orchestrator {
     let healthResult = {};
     let emergencyResult = {};
 
-    const runEmergency = shouldRun('EmergencyAgent') || shouldRun('emergency_detection') || true;
-    const runHealth = shouldRun('HealthAssessmentAgent') || shouldRun('health_assessment') || true;
+    const runEmergency = shouldRun('EmergencyAgent') || shouldRun('emergency_detection');
+    const runHealth = shouldRun('HealthAssessmentAgent') || shouldRun('health_assessment');
 
     if (runEmergency) updateStatus('emergency_detection', 'processing');
     if (runHealth) updateStatus('health_assessment', 'processing');
