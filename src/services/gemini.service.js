@@ -319,22 +319,37 @@ export class GeminiService {
       userPrompt: context,
       schema: MedicineInfoSchema,
       defaultFallback: () => {
-        const text = (context.symptoms || []).join(' ').toLowerCase() + (context.conditions || []).join(' ').toLowerCase();
-        let name = 'Paracetamol (500mg)';
-        let usage = 'Fever and mild pain relief';
-        let dosage = '1 tablet every 6 hours as needed';
-        let warning = 'Do not exceed 4g per day';
+        const text = (
+          (context.symptoms || []).join(' ') + ' ' +
+          (context.conditions || []).join(' ') + ' ' +
+          (context.rawInput || '') + ' ' +
+          (context.message || '')
+        ).toLowerCase();
 
-        if (text.includes('knee') || text.includes('joint') || text.includes('arthritis') || text.includes('leg pain')) {
-          name = 'Ibuprofen (400mg) / Diclofenac Topical Gel';
-          usage = 'Joint inflammation and knee pain relief';
-          dosage = '1 tablet with food every 8 hours or apply gel topically 3-4 times daily';
-          warning = 'Avoid taking oral anti-inflammatories on an empty stomach';
-        } else if (text.includes('stomach') || text.includes('acid') || text.includes('gas')) {
+        let name = 'Ibuprofen (400mg) / Diclofenac Topical Gel';
+        let usage = 'Back pain, muscle strain, and joint inflammation relief';
+        let dosage = '1 tablet with food every 8 hours OR apply topical gel 3-4 times daily';
+        let warning = 'Take oral anti-inflammatories (NSAIDs) with food. Avoid on an empty stomach.';
+        let category = 'NSAID Pain Reliever / Anti-inflammatory';
+
+        if (text.includes('fever') || text.includes('temperature') || text.includes('pyrexia')) {
+          name = 'Paracetamol (500mg)';
+          usage = 'Fever reduction and mild pain relief';
+          dosage = '1 tablet every 6 hours as needed';
+          warning = 'Do not exceed 4g per day';
+          category = 'Analgesic / Antipyretic';
+        } else if (text.includes('stomach') || text.includes('acid') || text.includes('gas') || text.includes('gastritis')) {
           name = 'Omeprazole (20mg) / Antacid Gel';
           usage = 'Acid reflux and stomach gastritis relief';
           dosage = '1 tablet before breakfast';
           warning = 'Consult doctor if severe abdominal pain occurs';
+          category = 'Antacid / PPI';
+        } else if (text.includes('cough') || text.includes('throat')) {
+          name = 'Dextromethorphan Cough Syrup';
+          usage = 'Dry cough suppressant';
+          dosage = '10ml three times daily after food';
+          warning = 'May cause light drowsiness';
+          category = 'Cough Suppressant';
         }
 
         return {
@@ -343,8 +358,8 @@ export class GeminiService {
             usage,
             dosage,
             warning,
-            sideEffects: ['Stomach upset', 'Dizziness'],
-            category: 'Over-The-Counter Reference'
+            sideEffects: ['Stomach upset', 'Heartburn'],
+            category
           }],
           generalAdvice: ['Consult a doctor if pain persists beyond 3 days'],
           disclaimer: 'AI guidance is for informational reference only. Consult a doctor for prescription.'

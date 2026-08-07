@@ -208,7 +208,8 @@ export class Orchestrator {
       const start = Date.now();
       const task = this.medicineAgent.process({
         conditions: healthResult.possibleConditions || [],
-        symptoms: healthResult.matchedSymptoms ? healthResult.matchedSymptoms.map(s => s.name) : [message]
+        symptoms: healthResult.matchedSymptoms ? healthResult.matchedSymptoms.map(s => s.name) : [message],
+        rawInput: message
       }).then(res => {
         updateStatus('medicine_info', 'complete', Date.now() - start);
         results.medicine_info = res;

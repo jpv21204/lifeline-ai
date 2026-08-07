@@ -6,8 +6,8 @@ export class MedicineAgent {
     this.icon = '💊';
   }
 
-  async process({ conditions = [], symptoms = [] }) {
-    const terms = [...(conditions || []), ...(symptoms || [])].filter(Boolean);
+  async process({ conditions = [], symptoms = [], rawInput = '' }) {
+    const terms = [...(conditions || []), ...(symptoms || []), rawInput].filter(Boolean);
     const searchTerms = terms.length > 0 ? terms : ['general discomfort'];
     const liveMedicines = [];
 
@@ -46,7 +46,7 @@ export class MedicineAgent {
     }
 
     // Query Gemini LLM Reasoning for symptom-specific OTC medication guidance
-    const geminiResult = await geminiService.generateMedicineInfo({ conditions, symptoms: searchTerms });
+    const geminiResult = await geminiService.generateMedicineInfo({ conditions, symptoms: searchTerms, rawInput });
     const geminiMedicines = geminiResult.medicines || [];
 
     // Combine and deduplicate medicines
