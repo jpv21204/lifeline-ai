@@ -11,6 +11,19 @@ const getEnvVar = (name) => {
       if (process.env[name]) return process.env[name];
     }
   } catch {}
+  try {
+    if (typeof process !== 'undefined' && process.env) {
+      const fs = require('fs');
+      const path = require('path');
+      const envPath = path.resolve(process.cwd(), '.env');
+      if (fs.existsSync(envPath)) {
+        const content = fs.readFileSync(envPath, 'utf8');
+        const regex = new RegExp(`(?:${name})=(.*)`);
+        const match = content.match(regex);
+        if (match && match[1]) return match[1].trim();
+      }
+    }
+  } catch {}
   return '';
 };
 
