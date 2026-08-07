@@ -209,35 +209,7 @@ export default function ActionPlan({ actionPlan, compact = false }) {
         </div>
       )}
 
-      {/* Medicine Information Section */}
-      {sections.medicine_info && (
-        <div className="action-section">
-          {renderSectionHeader(t('medicineReference'), '💊', 'medicine', 'low')}
-          <div className={`action-section-content ${activeSection === 'medicine' ? 'show' : ''}`}>
-            <p className="disclaimer-text">{sections.medicine_info.disclaimer}</p>
-            <div className="medicines-grid">
-              {(sections.medicine_info.medicines || sections.medicine_info.relevantMedicines || []).map((m, idx) => (
-                <div key={idx} className="medicine-card glass-card">
-                  <h5>{m.name || m.genericName}</h5>
-                  <p><strong>🩺 {t('usageLabel')}</strong> {m.usage}</p>
-                  <p><strong>🥄 {t('dosageLabel')}</strong> {m.dosage || m.dosageInfo}</p>
-                  <p><strong>⚠️ {t('warningLabel')}</strong> {m.warning || (m.precautions && m.precautions[0])}</p>
-                </div>
-              ))}
-            </div>
-            {sections.medicine_info.generalAdvice && (
-              <div className="general-med-advice">
-                <h5>💡 {t('generalMedGuidelines')}</h5>
-                <ul>
-                  {sections.medicine_info.generalAdvice.map((adv, idx) => (
-                    <li key={idx}>{adv}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+
 
       {/* Follow-up Section */}
       {sections.followup && (

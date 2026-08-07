@@ -202,21 +202,8 @@ export class Orchestrator {
       secondaryTasks.push(task);
     }
 
-    // Medicine Information Agent
-    if (shouldRun('MedicineAgent') || shouldRun('medicine_info')) {
-      updateStatus('medicine_info', 'processing');
-      const start = Date.now();
-      const task = this.medicineAgent.process({
-        conditions: healthResult.possibleConditions || [],
-        symptoms: healthResult.matchedSymptoms ? healthResult.matchedSymptoms.map(s => s.name) : [message],
-        rawInput: message
-      }).then(res => {
-        updateStatus('medicine_info', 'complete', Date.now() - start);
-        results.medicine_info = res;
-        return res;
-      });
-      secondaryTasks.push(task);
-    }
+    // Medicine Information Agent disabled per user request
+    updateStatus('medicine_info', 'idle');
 
     if (executionMode === 'parallel') {
       await Promise.all(secondaryTasks);

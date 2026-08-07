@@ -490,16 +490,6 @@ export class GeminiService {
           summary += `\n`;
         }
 
-        // Include Medicines if Medicine Agent ran
-        const ranMedicine = agentsRun.some(a => a.toLowerCase().includes('medicine'));
-        if (ranMedicine && medicines.length > 0) {
-          summary += `### 💊 **Medicine Reference**\n`;
-          medicines.forEach(m => {
-            summary += `*   **${m.name}**: ${m.usage || ''} — *Dosage:* ${m.dosage || 'As directed by physician'}. ${m.warning ? `⚠️ *Warning:* ${m.warning}` : ''}\n`;
-          });
-          summary += `\n`;
-        }
-
         // Include Schemes if Scheme Agent ran
         const ranScheme = agentsRun.some(a => a.toLowerCase().includes('scheme'));
         if (ranScheme && schemes.length > 0) {

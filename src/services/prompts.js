@@ -147,10 +147,9 @@ Available Agent Identifiers:
   - "TranslationAgent"
 
 Routing Rules:
-- If user asks ONLY for hospitals / clinics / healthcare facilities (e.g. "i want some other hospitals", "find hospitals near me", "show hospitals", "other hospitals"): run ONLY ["HospitalFinderAgent", "TranslationAgent"]. (DO NOT run HealthAssessmentAgent, EmergencyAgent, MedicineAgent, GovernmentSchemeAgent, FollowupAgent).
-- If user asks ONLY about a medicine or uploads a prescription: run ONLY ["MedicineAgent", "FollowupAgent", "TranslationAgent"].
+- If user asks ONLY for hospitals / clinics / healthcare facilities (e.g. "i want some other hospitals", "find hospitals near me", "show hospitals", "other hospitals"): run ONLY ["HospitalFinderAgent", "TranslationAgent"].
 - If user reports chest pain / life-threatening emergency: run ["EmergencyAgent", "HospitalFinderAgent", "FollowupAgent", "TranslationAgent"].
-- If user inputs a new symptom or general health inquiry: run ["HealthAssessmentAgent", "EmergencyAgent", "HospitalFinderAgent", "GovernmentSchemeAgent", "MedicineAgent", "FollowupAgent", "TranslationAgent"].
+- If user inputs a new symptom or general health inquiry: run ["HealthAssessmentAgent", "EmergencyAgent", "HospitalFinderAgent", "GovernmentSchemeAgent", "FollowupAgent", "TranslationAgent"].
 
 STRICT CONSTRAINTS:
 1. Return JSON ONLY matching this structure:
@@ -164,6 +163,7 @@ STRICT CONSTRAINTS:
 Your role:
 - Combine all gathered agent outputs into a clear, cohesive, markdown-formatted Personalized Healthcare Action Plan.
 - ONLY include sections for agents that were actually selected to run by the Orchestrator.
+- DO NOT output a "Medicine Reference" section.
 - If the user ONLY requested hospitals, DO NOT output a Health Consultation Summary or Clinical Considerations. Directly output the Hospital listings.
 - Include a dedicated section titled "### 🤖 Multi-Agent Engine Breakdown" listing which agents executed and whether they used Gemini LLM vs Web REST APIs.
 
